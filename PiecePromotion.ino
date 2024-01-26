@@ -55,9 +55,21 @@ int NumberOfMovesMade=1;
 //0=no piece, 1=white, 2=black
 int PieceColors[64]={1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
+int engineSA = 1;   // Slave Address for the chess engine controller
+int boardSA = 2;    // Slave Address for the board/LCD controller
+int scaraSA = 3;    // Slave Address for the SCARA controller
+
+int promotedPiece;
+short queen,knight,rook,bishop;
+queen = 24;
+knight = 8;
+rook = 16;
+bishop = 12;
 
 void setup() {
   Serial.begin(9600);
+  Wire.begin(boardSA); // Initialize I2C communication with set slave address
+  Wire.onReceive(receiveEvent);
   Serial.println("CAP1188 test!");
 
   // Initialize the sensor, if using i2c you can pass in the i2c address
@@ -70,6 +82,7 @@ void setup() {
 }
 
 void loop() {
+  selectedPiece();
 
   delay(3000);
   uint8_t touched = cap.touched();
@@ -247,5 +260,38 @@ void UpdateBoardPosition(int PieceWasHere, int PieceMovedHere,int AnotherPieceWa
       old_boardState[AnotherPieceWasHere]=0;
       NumberOfMovesMade++;      
     }
+  }
+}
+
+void selectedPiece() {
+  Wire.requestFrom(engineSA, 2);    // request 2 bytes from engine controller
+  while (Wire.available()) { // slave may send less than requested
+    int piece = Wire.read(); // receive a byte as character
+  }
+  switch (piece)
+  {
+   case queen:
+      Serial.print("Promoted to Queen");         // print the piece
+      break;
+   case knight:
+      Serial.print("Promoted to Knight");         // print the piece
+      break;
+   case rook:
+      Serial.print("Promoted to Rook");         // print the piece
+      break;
+   case bishop:
+      Serial.print("Promoted to Bishop");         // print the piece
+      break;
+  default:
+      Serial.print("ERROR")
+      break;
+  }
+}
+
+// function that executes whenever data is received from the master
+// this function is registered as an event,  see setup()
+void receiveEvent() {
+  if(Wire.available()) {
+    dataIn = Wire.read();
   }
 }
