@@ -12,8 +12,7 @@
 
   Written by Limor Fried/Ladyada for Adafruit Industries.  
   BSD license, all text above must be included in any redistribution
- ****************************************************/
- 
+ **************************************************/
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_CAP1188.h>
@@ -59,19 +58,15 @@ int PieceColors[64]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 #define boardSA 2    // Slave Address for the board/LCD controller
 #define scaraSA 3    // Slave Address for the SCARA controller
 
-int promotedPiece;
 #define queen 24
 #define knight 8
 #define rook 16
 #define bishop 12
 
-bool flagWhite=true;
-bool flagBlack=false;
-
 void setup() {
-  Serial.begin(9600);
-  Wire.begin(boardSA); // Initialize I2C communication with set slave address
-  Wire.onReceive(receiveEvent);
+   Serial.begin(9600);
+   Wire.begin(boardSA); // Initialize I2C communication with set slave address
+   Wire.onReceive(receiveEvent);
   /*
   Serial.println("CAP1188 test!");
 
@@ -88,36 +83,47 @@ void setup() {
 void loop() {
 
   delay(3000);
+  /*
   uint8_t touched = cap.touched();
   int input[64];
   int PieceWasHere=-1;
   int AnotherPieceWasHere=-1; //Variable used when capturing pieces
   int PieceMovedHere=-1;
   int NumberOfChanges=0;
-  flagTest(flagWhite,flagBlack);
+  */
+  bool flagUser=true;
+  bool flagComputer=false;
+  flagTest(flagUser,flagComputer);
 }
 
-void selectedPiece(int piece) {
-  Wire.requestFrom(engineSA, 2);    // request 2 bytes from engine controller
-  while (Wire.available()) { // slave may send less than requested
-    piece = Wire.read(); // receive a byte as character
-  }
-  switch (piece)
+// Request the value of the piece the user has selected to promote to
+void selectedPiece(int promoteFlag) {
+   int piece;
+   Wire.beginTransmission(engineSA);   // Signal engine controller who is promoting
+   Wire.write(promoteFlag);
+   Wire.endTransmission();
+
+   Wire.requestFrom(engineSA, 2);    // request selected piece from engine controller
+   while (Wire.available()) { // slave may send less than requested
+      piece = Wire.read(); // receive a byte as character
+   }
+
+  switch (piece)     // Print the piece selected
   {
    case queen:
-      Serial.print("Promoted to Queen");         // print the piece
+      Serial.println("Promoted to Queen");      
       break;
    case knight:
-      Serial.print("Promoted to Knight");         // print the piece
+      Serial.println("Promoted to Knight");       
       break;
    case rook:
-      Serial.print("Promoted to Rook");         // print the piece
+      Serial.println("Promoted to Rook");         
       break;
    case bishop:
-      Serial.print("Promoted to Bishop");         // print the piece
+      Serial.println("Promoted to Bishop");         
       break;
   default:
-      Serial.print("ERROR");
+      Serial.println("ERROR");
       break;
   }
 }
@@ -125,28 +131,26 @@ void selectedPiece(int piece) {
 // function that executes whenever data is received from the master
 // this function is registered as an event,  see setup()
 void receiveEvent() {
-  int dataIn;
-  if(Wire.available()) {
-    dataIn = Wire.read();
-  }
-  selectedPiece(dataIn);
-
+   int dataIn;
+   if(Wire.available()) {
+      dataIn = Wire.read();
+      Serial.println("Data Received Event");
+   }
 }
 
-void flagTest(bool flagWhite, bool flagBlack) {
-    if(flagWhite)
+void flagTest(bool flagUser, bool flagComputer) {
+    if(flagUser==true)
     {
-      //send Piece Promotion Flag for White Pieces
-      promotedPiece = 1000;
+      //send Piece Promotion Flag for User Pieces
+      Serial.println("User Promoting!");
+      delay(8000);
+      selectedPiece(0);
+    } else if(flagComputer==true) {
+      //Send Piece Promotion Flag for Computer Pieces
+      Serial.println("Computer Promoting!");
+      delay(8000);
+      selectedPiece(1);
     }
-    else if(flagBlack) {
-      //Send Piece Promotion Flag for Black Pieces
-      promotedPiece = 1001;
-    }
-    Serial.println("Promoting!");
-    Wire.beginTransmission(engineSA);
-    Wire.write(promotedPiece);
-    Wire.endTransmission();
 }
 /*
 //This block creates an input array from the sensor inputs, and compares the input array to the current boardstate known by the computer. 

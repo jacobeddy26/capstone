@@ -3,6 +3,7 @@
 #include <Elegoo_TFTLCD.h> // Hardware-specific library
 #include <TouchScreen.h>
 #include <Wire.h>
+#include <stdint.h>
 
 // The control pins for the LCD can be assigned to any digital or
 // analog pins...but we'll use the analog pins as this allows us to
@@ -91,25 +92,17 @@ char promolabels[4][8] = {"  Queen ", "   Rook ", "  Knight", " Bishop "};
 uint16_t promocolors[4] = {ILI9341_PURPLE, ILI9341_PURPLE, ILI9341_PURPLE, ILI9341_PURPLE};
 char promo_to;
 bool promo_done = false;
+int dataIn;
 
-int dataIn, whitePromotion, backPromotion;
+bool userPromoteFlag = false;
+bool computerPromoteFlag = false;
 
-int promotedPiece;
 
 void setup() {
+  Serial.begin(9600);
   Wire.begin(engineSA); // Initialize I2C communication as master
   Wire.onReceive(receiveEvent);
-  Wire.onRequest(promotionPrompt);
-  Serial.begin(9600);
-  
-  tft.reset();
-  uint16_t identifier = tft.readID();
-  if(identifier != 0x9325 & identifier != 0x9328 & identifier != 0x4535 & identifier != 0x7575 & identifier != 0x8357)
-     identifier = 0x9341;
-  tft.begin(identifier);
-  tft.setRotation(2);
-  tft.fillScreen(BLACK);
-  status(F("Select which piece to promote to:"));
+  Wire.onRequest(requestEvent);
 }
 
 void loop() {
@@ -127,22 +120,25 @@ void loop() {
 void receiveEvent() {
   if(Wire.available()) {
     dataIn = Wire.read();
+    Serial.println(dataIn);
   }
-  switch(dataIn) {
-    case whitePromotion: 
-      // Prompt player (white) for piece to promote to
-      promotedPiece = promotionPrompt();
-      break;
-    case blackPromotion:
-      // Prompt player (black) for piece to promote to
-      promotedPiece = 0;
-      break;
-  }
+
+  if (dataIn == 0)
+    userPromoteFlag = true;
+  else if (dataIn == 1)
+    computerPromoteFlag = true; 
 }
 
 // function that executes whenever data is requested by master
 // this function is registered as an event, see setup()
 void requestEvent() {
+   int promotedPiece;
+   if(userPromoteFlag==true) {
+        int promotedPiece = userPromotionPrompt();
+   } else if (computerPromoteFlag==true) {
+       // int promotedPiece = computerPromotionPrompt();
+   }
+
   Wire.write(promotedPiece); // respond with message of 6 bytes
   // as expected by master
 }
@@ -155,8 +151,88 @@ void status(const __FlashStringHelper *msg) {
   tft.print(msg);
 }
 
-int promotionPrompt() {
+int userPromotionPrompt() {
+  int piece;
+   
+  tft.reset();
+  uint16_t identifier = tft.readID();
+  if(identifier != 0x9325 & identifier != 0x9328 & identifier != 0x4535 & identifier != 0x7575 & identifier != 0x8357)
+    identifier = 0x9341;
+  tft.begin(identifier);
+  tft.setRotation(2);
+  tft.fillScreen(BLACK);
+  status(F("Select which piece to promote to:"));
+
+  for (uint8_t row=0; row<4; row++) {
+    for (uint8_t col=0; col<1; col++) {
+      promo_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+                  BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
+                  BUTTON_W, BUTTON_H, ILI9341_WHITE, promocolors[col + row], ILI9341_WHITE,
+                  promolabels[col + row], BUTTON_TEXTSIZE); 
+      promo_choice[col + row].drawButton();
+    }
+  }
+
+  while(!promo_done) {
+    digitalWrite(13, HIGH);
+    TSPoint p = ts.getPoint();
+    digitalWrite(13, LOW);
+  
+    pinMode(XM, OUTPUT);
+    pinMode(YP, OUTPUT);
+  
+    if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+      p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+      p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+    }
+
+    //check if all buttons were pressed
+    for (uint8_t b=0; b<4; b++) {
+      if (promo_choice[b].contains(p.x, p.y)) {
+          promo_choice[b].press(true);  // tell the button it is pressed
+        promo_done = true;
+        promo_choice[b].drawButton(true);  // draw inverted version of button
+        delay(100); //time for user to see button invert
+        tft.fillScreen(BLACK);
+        switch (b) {
+          case 0: status(F("Promoted to queen.")); piece = queen; break;
+          case 1: status(F("Promoted to rook.")); piece = rook; break;
+          case 2: status(F("Promoted to knight.")); piece = knight; break;
+          case 3: status(F("Promoted to bishop.")); piece = bishop; break;
+          default: break;
+        }
+      } else {
+        promo_done = false;
+        promo_choice[b].press(false);  // tell the button it is NOT pressed
+      }
+      delay(100); // UI debouncing
+    }
+/*
+     //ask buttons if their state has changed
+     for (uint8_t b=0; b<4; b++) {
+       if (promo_choice[b].justReleased())
+         promo_choice[b].drawButton();  // draw normal version of button
+       if (promo_choice[b].justPressed()) {
+           promo_choice[b].drawButton(true);  // draw inverted version of button
+    
+       }
+     }
+*/
+  }
+  return piece;
+}
+
+int computerPromotionPrompt() {
    int piece;
+   
+   tft.reset();
+   uint16_t identifier = tft.readID();
+   if(identifier != 0x9325 & identifier != 0x9328 & identifier != 0x4535 & identifier != 0x7575 & identifier != 0x8357)
+      identifier = 0x9341;
+   tft.begin(identifier);
+   tft.setRotation(2);
+   tft.fillScreen(BLACK);
+   status(F("Select which piece to promote to:"));
 
    for (uint8_t row=0; row<4; row++) {
       for (uint8_t col=0; col<1; col++) {

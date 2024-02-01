@@ -293,8 +293,8 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
              +(b[x^16]==k+36))                 /* kling to non-virgin King */
              -(R>>2);                          /* end-game Pawn-push bonus */
         V=y+r+1&S?647-p:2*(u&y+16&32);         /* PROMOTION or 6/7th bonus */
-        Wire.beginTransmission(boardSA);       // Transmit piece promoted to
-        Wire.write((int)V);
+        Wire.beginTransmission(boardSA);       // Transmit piece promoted
+        Wire.write((int)V);               
         Wire.endTransmission();
         b[y]+=V;i+=V;                          /* change piece, add score  */
        }
