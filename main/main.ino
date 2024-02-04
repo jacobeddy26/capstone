@@ -9,11 +9,18 @@
 #include <LiquidCrystal.h>
 #include "Chessuino.h"
 
+#define  queen 24
+#define knight 8
+#define rook 16
+#define bishop 12
+
 LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);        /* Pins to control LCD display */
 int adc_key_val[5] ={50, 200, 400, 600, 800 };  /* Analog values from keypad */
 int scaraSA = 3;                                // Slave Address for SCARA controller
 int boardSA = 2;                                // Slave Address for Board/LCD controller
 int engineSA = 1;                               // Slave Address for Chess Engine controller
+
+char bestMove[5];
 
 void setup(){
     Wire.begin();
@@ -48,6 +55,9 @@ void loop(){
     T=0x3F;                                   /* T=Computer Play strength */
     bkp();                                    /* Save the board just in case */    
     r = D(-I,I,Q,O,1,3);                      /* Check & do the human movement */
+    Serial.print("Best Move: ");
+    Serial.print(bestMove);
+    Serial.print("\n");
     if( !(r>-I+1) ){
         lcd.setCursor(10, 1);
         lcd.print("Lose "); 
@@ -79,9 +89,9 @@ void loop(){
             gameOver();
         }
         
-        strcpy(lastM, c);                     /* Valid ARDUINO movement */
+        strcpy(lastM, c);                         /* Valid ARDUINO movement */
 
-        Wire.beginTransmission(scaraSA);                // beginTransmission(address)
+        Wire.beginTransmission(scaraSA);          // beginTransmission(address)
         Wire.write(c,5); 
         Wire.endTransmission();                   // Output Computer's Move as String to I2C
 
@@ -92,7 +102,7 @@ void loop(){
     K=I;
     N=0;
     T=0x3F;                                   /* T=Computer Play strength */
-    r = D(-I,I,Q,O,1,3);                      /* Think & do*/    
+    r = D(-I,I,Q,O,1,3);                      /* Think & do computer's move*/    
 
     if( !(r>-I+1) ){
         lcd.setCursor(10, 1);
@@ -108,7 +118,7 @@ void loop(){
 
     strcpy(lastM, c);                         /* Valid ARDUINO movement */
 
-    Wire.beginTransmission(scaraSA);                // beginTransmission(address)
+    Wire.beginTransmission(scaraSA);          // beginTransmission(address)
     Wire.write(c,5); 
     Wire.endTransmission();                   // Output Computer's Move as String to I2C
 
@@ -238,11 +248,6 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
  signed char r;
 
  int promotedPiece;
- short queen,knight,rook,bishop;
- queen = 24;
- knight = 8;
- rook = 16;
- bishop = 12;
 
  if (++Z>30) {                                     /* stack underrun check */
   breakpoint=1;               /* AVR Studio 4 Breakpoint for stack underrun */
@@ -305,6 +310,10 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
         s=C>2|v>V?-D(-l,-V,-v,                 /* recursive eval. of reply */
                               F,0,C):v;        /* or fail low if futile    */
        W(s>q&++C<d);v=s;
+       if (z & K == I) {
+         // Store the best move when in the root node
+         sprintf(bestMove, "%c%c%c%c", 'a' + (X & 7), '8' - (X >> 4), 'a' + (Y & 7), '8' - (Y >> 4 & 7));
+       }
        if(z&&K-I&&v+I&&x==K&y==L)              /* move pending & in root:  */
        {Q=-e-i;O=F;                            /*   exit if legal & found  */
         R+=i>>7;--Z;return l;                  /* captured non-P material  */
@@ -336,7 +345,7 @@ C:if(m>I-M|m<M-I)d=98;                         /* mate holds to any depth  */
   }
  }                                             /*    encoded in X S,8 bits */
  k^=24;                                        /* change sides back        */
- --Z;return m+=m<e;                            /* delayed-loss bonus       */
+ --Z;return m//+=m<e;                            /* delayed-loss bonus       */
 }
 
 void serialBoard(){

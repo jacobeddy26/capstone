@@ -127,17 +127,19 @@ void loop() {
 // function that executes whenever data is received from the master
 // this function is registered as an event,  see setup()
 void receiveEvent() {
-  if(Wire.available()) {
-    dataIn = Wire.read();
-    Serial.print("dataIn: ");
-    Serial.print(dataIn);
-    Serial.print("\n");
-  }
+   userPromoteFlag = false;
+   computerPromoteFlag = false;
+   if(Wire.available()) {
+      dataIn = Wire.read();
+      Serial.print("dataIn: ");
+      Serial.print(dataIn);
+      Serial.print("\n");
+   }
 
   if (dataIn == 0)
-    userPromoteFlag = true;
+      userPromoteFlag = true;
   else if (dataIn == 1)
-    computerPromoteFlag = true; 
+      computerPromoteFlag = true; 
 }
 
 // function that executes whenever data is requested by master
@@ -282,10 +284,6 @@ int computerPromotionPrompt() {
          }
          Serial.println(piece);
        }
-       else
-         promo_done = false;
-         promo_choice[b].press(false);  // tell the button it is NOT pressed
-     }
     delay(100); // UI debouncing
   }
   return piece;
