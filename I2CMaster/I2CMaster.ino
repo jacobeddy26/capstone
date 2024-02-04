@@ -77,10 +77,11 @@
 # define whitePromotion 1000
 # define blackPromotion 1001
 
-#define queen 24
+
 #define knight 8
-#define rook 16
 #define bishop 12
+#define rook 16
+#define queen 24
 /////////////////////////////////////////////////////////////////////////////
 
 Elegoo_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
@@ -88,21 +89,29 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
 //creates 4 buttons for user to choose what to promote to
 Elegoo_GFX_Button promo_choice[4];
-char promolabels[4][8] = {"  Queen ", "   Rook ", "  Knight", " Bishop "};
+char promolabels[4][8] = {"Queen", "Rook", "Knight", "Bishop"};
 uint16_t promocolors[4] = {ILI9341_PURPLE, ILI9341_PURPLE, ILI9341_PURPLE, ILI9341_PURPLE};
-char promo_to;
 bool promo_done = false;
 int dataIn;
 
 bool userPromoteFlag = false;
 bool computerPromoteFlag = false;
 
+int promotedPiece = 0;
 
 void setup() {
   Serial.begin(9600);
   Wire.begin(engineSA); // Initialize I2C communication as master
   Wire.onReceive(receiveEvent);
   Wire.onRequest(requestEvent);
+   
+  tft.reset();
+  uint16_t identifier = tft.readID();
+  if(identifier != 0x9325 & identifier != 0x9328 & identifier != 0x4535 & identifier != 0x7575 & identifier != 0x8357)
+    identifier = 0x9341;
+  tft.begin(identifier);
+  tft.setRotation(2);
+  tft.fillScreen(BLACK);
 }
 
 void loop() {
@@ -120,7 +129,9 @@ void loop() {
 void receiveEvent() {
   if(Wire.available()) {
     dataIn = Wire.read();
-    Serial.println(dataIn);
+    Serial.print("dataIn: ");
+    Serial.print(dataIn);
+    Serial.print("\n");
   }
 
   if (dataIn == 0)
@@ -132,15 +143,17 @@ void receiveEvent() {
 // function that executes whenever data is requested by master
 // this function is registered as an event, see setup()
 void requestEvent() {
-   int promotedPiece;
-   if(userPromoteFlag==true) {
-        int promotedPiece = userPromotionPrompt();
-   } else if (computerPromoteFlag==true) {
-       // int promotedPiece = computerPromotionPrompt();
-   }
-
-  Wire.write(promotedPiece); // respond with message of 6 bytes
-  // as expected by master
+  promotedPiece = 0;
+  if(userPromoteFlag==true) {
+    userPromotionPrompt();
+  } else if (computerPromoteFlag==true) {
+    // computerPromotionPrompt();
+  }
+  delay(500);
+  Serial.print("promotedPiece: ");
+  Serial.print(promotedPiece);
+  Serial.print("\n");
+  Wire.write(promotedPiece);
 }
 
 // prints line of text
@@ -151,15 +164,7 @@ void status(const __FlashStringHelper *msg) {
   tft.print(msg);
 }
 
-int userPromotionPrompt() {
-  int piece;
-   
-  tft.reset();
-  uint16_t identifier = tft.readID();
-  if(identifier != 0x9325 & identifier != 0x9328 & identifier != 0x4535 & identifier != 0x7575 & identifier != 0x8357)
-    identifier = 0x9341;
-  tft.begin(identifier);
-  tft.setRotation(2);
+void userPromotionPrompt() {
   tft.fillScreen(BLACK);
   status(F("Select which piece to promote to:"));
 
@@ -173,7 +178,7 @@ int userPromotionPrompt() {
     }
   }
 
-  while(!promo_done) {
+  while(promo_done==false) {
     digitalWrite(13, HIGH);
     TSPoint p = ts.getPoint();
     digitalWrite(13, LOW);
@@ -190,49 +195,39 @@ int userPromotionPrompt() {
     for (uint8_t b=0; b<4; b++) {
       if (promo_choice[b].contains(p.x, p.y)) {
           promo_choice[b].press(true);  // tell the button it is pressed
-        promo_done = true;
         promo_choice[b].drawButton(true);  // draw inverted version of button
         delay(100); //time for user to see button invert
         tft.fillScreen(BLACK);
         switch (b) {
-          case 0: status(F("Promoted to queen.")); piece = queen; break;
-          case 1: status(F("Promoted to rook.")); piece = rook; break;
-          case 2: status(F("Promoted to knight.")); piece = knight; break;
-          case 3: status(F("Promoted to bishop.")); piece = bishop; break;
-          default: break;
+          case 0:
+            promotedPiece=queen;
+            promo_done = true; 
+            status(F("Promoted to queen.")); 
+            break;
+          case 1:
+            promotedPiece=rook;
+            promo_done = true;
+            status(F("Promoted to rook."));
+            break;
+          case 2:
+            promotedPiece=knight;
+            promo_done = true;
+            status(F("Promoted to knight."));
+            break;
+          case 3:
+            promotedPiece=bishop;
+            promo_done = true;
+            status(F("Promoted to bishop."));
+            break;
         }
-      } else {
-        promo_done = false;
-        promo_choice[b].press(false);  // tell the button it is NOT pressed
       }
       delay(100); // UI debouncing
     }
-/*
-     //ask buttons if their state has changed
-     for (uint8_t b=0; b<4; b++) {
-       if (promo_choice[b].justReleased())
-         promo_choice[b].drawButton();  // draw normal version of button
-       if (promo_choice[b].justPressed()) {
-           promo_choice[b].drawButton(true);  // draw inverted version of button
-    
-       }
-     }
-*/
   }
-  return piece;
 }
-
+/*
 int computerPromotionPrompt() {
    int piece;
-   
-   tft.reset();
-   uint16_t identifier = tft.readID();
-   if(identifier != 0x9325 & identifier != 0x9328 & identifier != 0x4535 & identifier != 0x7575 & identifier != 0x8357)
-      identifier = 0x9341;
-   tft.begin(identifier);
-   tft.setRotation(2);
-   tft.fillScreen(BLACK);
-   status(F("Select which piece to promote to:"));
 
    for (uint8_t row=0; row<4; row++) {
       for (uint8_t col=0; col<1; col++) {
@@ -264,40 +259,35 @@ int computerPromotionPrompt() {
          promo_choice[b].press(true);  // tell the button it is pressed
          promo_done = true;
          promo_choice[b].drawButton(true);  // draw inverted version of button
-         switch (b) {
-           case 0: promo_to = "q"; piece = queen; break;
-           case 1: promo_to = "r"; piece = rook; break;
-           case 2: promo_to = "k"; piece = knight; break;
-           case 3: promo_to = "b"; piece = bishop; break;
-           default: break;
-         }
-         Serial.print(promo_to);
          delay(100); //time for user to see button invert
          tft.fillScreen(BLACK);
          switch (b) {
-           case 0: status(F("Promoted to queen.")); piece = queen; break;
-           case 1: status(F("Promoted to rook.")); piece = rook; break;
-           case 2: status(F("Promoted to knight.")); piece = knight; break;
-           case 3: status(F("Promoted to bishop.")); piece = bishop; break;
-           default: break;
+           case 0:
+            piece = queen; 
+            status(F("Promoted to queen.")); 
+            break;
+           case 1:
+            piece = rook; 
+            status(F("Promoted to rook.")); 
+            break;
+           case 2:
+            piece = knight; 
+            status(F("Promoted to knight.")); 
+            break;
+           case 3:
+            piece = bishop; 
+            status(F("Promoted to bishop.")); 
+            break;
+           default: piece = 0; break;
          }
+         Serial.println(piece);
        }
        else
          promo_done = false;
          promo_choice[b].press(false);  // tell the button it is NOT pressed
      }
-/*
-     //ask buttons if their state has changed
-     for (uint8_t b=0; b<4; b++) {
-       if (promo_choice[b].justReleased())
-         promo_choice[b].drawButton();  // draw normal version of button
-       if (promo_choice[b].justPressed()) {
-           promo_choice[b].drawButton(true);  // draw inverted version of button
-    
-       }
-     }
-*/
     delay(100); // UI debouncing
   }
   return piece;
 }
+*/

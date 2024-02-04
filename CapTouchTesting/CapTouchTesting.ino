@@ -63,6 +63,8 @@ int PieceColors[64]={0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 #define rook 16
 #define bishop 12
 
+int PC = 0;
+
 void setup() {
    Serial.begin(9600);
    Wire.begin(boardSA); // Initialize I2C communication with set slave address
@@ -81,7 +83,6 @@ void setup() {
 }
 
 void loop() {
-
   delay(3000);
   /*
   uint8_t touched = cap.touched();
@@ -93,21 +94,43 @@ void loop() {
   */
   bool flagUser=true;
   bool flagComputer=false;
-  flagTest(flagUser,flagComputer);
+  if (PC < 1) {
+    flagTest(flagUser,flagComputer);
+    PC += 1;
+  }  
+}
+
+void flagTest(bool flagUser, bool flagComputer) {
+    if(flagUser==true)
+    {
+      //send Piece Promotion Flag for User Pieces
+      Serial.println("User Promoting!");
+      selectedPiece(0);
+    } else if(flagComputer==true) {
+      //Send Piece Promotion Flag for Computer Pieces
+      Serial.println("Computer Promoting!");
+      selectedPiece(1);
+    }
 }
 
 // Request the value of the piece the user has selected to promote to
 void selectedPiece(int promoteFlag) {
-   int piece;
-   Wire.beginTransmission(engineSA);   // Signal engine controller who is promoting
-   Wire.write(promoteFlag);
-   Wire.endTransmission();
+  int piece;
+  Wire.beginTransmission(engineSA);   // Signal engine controller who is promoting
+  Wire.write(promoteFlag);
+  Wire.endTransmission();
+  delay(1000); 
 
-   Wire.requestFrom(engineSA, 2);    // request selected piece from engine controller
-   while (Wire.available()) { // slave may send less than requested
-      piece = Wire.read(); // receive a byte as character
-   }
+  Wire.requestFrom(engineSA, 32);    // request selected piece from engine controller
+  if (Wire.available()) { // slave may send less than requested
+    piece = Wire.read(); // receive a byte as character
+  }
 
+  delay(500);
+
+  Serial.print("piece: ");
+  Serial.print(piece);
+  Serial.print("\n");
   switch (piece)     // Print the piece selected
   {
    case queen:
@@ -136,21 +159,6 @@ void receiveEvent() {
       dataIn = Wire.read();
       Serial.println("Data Received Event");
    }
-}
-
-void flagTest(bool flagUser, bool flagComputer) {
-    if(flagUser==true)
-    {
-      //send Piece Promotion Flag for User Pieces
-      Serial.println("User Promoting!");
-      delay(8000);
-      selectedPiece(0);
-    } else if(flagComputer==true) {
-      //Send Piece Promotion Flag for Computer Pieces
-      Serial.println("Computer Promoting!");
-      delay(8000);
-      selectedPiece(1);
-    }
 }
 /*
 //This block creates an input array from the sensor inputs, and compares the input array to the current boardstate known by the computer. 
