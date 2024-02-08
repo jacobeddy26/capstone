@@ -13,8 +13,8 @@ based on the step size if microstepping is used.
 #define dirPin 2
 #define stepPin 3
 
-int currentAngle1 = 0, nextAngle1 = 90, moveAngle1 = 0;
-int currentAngle2 = 0, nextAngle2 = 90, moveAngle2 = 0;
+int currentAngle1 = 0, moveAngle1 = 0;
+int currentAngle2 = 0, moveAngle2 = 0;
 
 double theta1, theta2;
 
@@ -34,8 +34,8 @@ void moveArmToSquare(double x,  double y) {
    calculateAngles(x, y);
 
    // Move the SCARA arm to the calculated joint angles
-   moveShoulder(theta1);
-   moveElbow(theta2);
+   moveShoulder();
+   moveElbow();
    // Optionally, moveWrist and controlGripper functions can be added if needed
    
    // Delay to allow the arm to reach the desired position
@@ -58,28 +58,44 @@ void calculateAngles(double x, double y) {		// Find Theta1 and Theta2
    // Update global variables or pass theta1 and theta2 to the calling function
 }
 
-void moveShoulder(double theta1) {
+void moveShoulder() {
    //Determine if the angular movement is an increase or decrease in angular position
 
   //Call a different function depending on angular movement
-  if (currentAngle1 < nextAngle1) {
-    moveAngle1 = nextAngle1-currentAngle1; //Create a move angle variable to send to the function
+  if (currentAngle1 < theta1) {
+    moveAngle1 = theta1-currentAngle1; //Create a move angle variable to send to the function
     moveCW(moveAngle1);
-    currentAngle1 = nextAngle1; //Set the new current angle
+    currentAngle1 = theta1; //Set the new current angle
     //Serial.println(currentAngle);
   }
-  else if (currentAngle2 > nextAngle2) {
-    moveAngle2 = currentAngle2-nextAngle2;
+  else if (currentAngle2 > theta2) {
+    moveAngle2 = currentAngle2-theta2;
     moveCCW(moveAngle2);
-    currentAngle2 = nextAngle2;
+    currentAngle2 = theta2;
   }
   else {
-    currentAngle2 = nextAngle2;
+    currentAngle2 = theta2;
   }
 
 }
 
-void moveElbow(double theta2) {
+void moveElbow() {
+   
+  //Call a different function depending on angular movement
+  if (currentAngle1 < theta1) {
+    moveAngle1 = theta1-currentAngle1; //Create a move angle variable to send to the function
+    moveCW(moveAngle1);
+    currentAngle1 = theta1; //Set the new current angle
+    //Serial.println(currentAngle);
+  }
+  else if (currentAngle2 > theta2) {
+    moveAngle2 = currentAngle2-theta2;
+    moveCCW(moveAngle2);
+    currentAngle2 = theta2;
+  }
+  else {
+    currentAngle2 = theta2;
+  }
 
 }
 
