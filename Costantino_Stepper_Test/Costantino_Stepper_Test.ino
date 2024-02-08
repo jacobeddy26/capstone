@@ -13,34 +13,78 @@ based on the step size if microstepping is used.
 #define dirPin 2
 #define stepPin 3
 
-int currentAngle = 0, nextAngle = 90, moveAngle = 0;
+int currentAngle1 = 0, nextAngle1 = 90, moveAngle1 = 0;
+int currentAngle2 = 0, nextAngle2 = 90, moveAngle2 = 0;
+
+double theta1, theta2;
+
 void setup() {
-  //Set pin modes for each of the arduino pins
-pinMode(stepPin, OUTPUT);
-pinMode(dirPin, OUTPUT);
-Serial.begin(9600);
+   //Set pin modes for each of the arduino pins
+   pinMode(stepPin, OUTPUT);
+   pinMode(dirPin, OUTPUT);
+   Serial.begin(9600);
 }
 
 void loop() {
 
-  //Determine if the angular movement is an increase or decrease in angular position
+}
+
+void moveArmToSquare(double x,  double y) {
+   // Inverse Kinematics Calculation
+   calculateAngles(x, y);
+
+   // Move the SCARA arm to the calculated joint angles
+   moveShoulder(theta1);
+   moveElbow(theta2);
+   // Optionally, moveWrist and controlGripper functions can be added if needed
+   
+   // Delay to allow the arm to reach the desired position
+   delay(1000);
+}
+
+void calculateAngles(double x, double y) {		// Find Theta1 and Theta2
+   // Inverse Kinematics Calculation
+   double L1 = 7.5;
+   double L2 = 7.5;
+
+   double D = (pow(x,2) + pow(y,2) - pow(L1,2) - pow(L2,2))/ (2 * L1 * L2);
+   theta2 = atan2(-sqrt(1 - pow(D,2)), D);
+    
+   double phi = atan2(y, x); 			// Ensure correct quadrant
+   double c = L1 + L2 * cos(theta2);
+   double s = L2 * sin(theta2);
+   theta1 = phi - atan2(s, c);
+    
+   // Update global variables or pass theta1 and theta2 to the calling function
+}
+
+void moveShoulder(double theta1) {
+   //Determine if the angular movement is an increase or decrease in angular position
 
   //Call a different function depending on angular movement
-  if (currentAngle < nextAngle) {
-    moveAngle = nextAngle-currentAngle; //Create a move angle variable to send to the function
-    moveCW(moveAngle);
-    currentAngle = nextAngle; //Set the new current angle
+  if (currentAngle1 < nextAngle1) {
+    moveAngle1 = nextAngle1-currentAngle1; //Create a move angle variable to send to the function
+    moveCW(moveAngle1);
+    currentAngle1 = nextAngle1; //Set the new current angle
     //Serial.println(currentAngle);
   }
-  else if (currentAngle > nextAngle) {
-    moveAngle = currentAngle-nextAngle;
-    moveCCW(moveAngle);
-    currentAngle = nextAngle;
+  else if (currentAngle2 > nextAngle2) {
+    moveAngle2 = currentAngle2-nextAngle2;
+    moveCCW(moveAngle2);
+    currentAngle2 = nextAngle2;
   }
   else {
-    currentAngle = nextAngle;
+    currentAngle2 = nextAngle2;
   }
+
 }
+
+void moveElbow(double theta2) {
+
+}
+
+// Example Usage:
+// moveArmToSquare(4, 3)  // Move to square (4, 3) on the chessboard
 
 /*This function determines the clockwise angular movement required for the motor
 and calculates the step movements for the motor to a 0.35 degree accuracy */
