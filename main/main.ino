@@ -345,7 +345,7 @@ C:if(m>I-M|m<M-I)d=98;                         /* mate holds to any depth  */
   }
  }                                             /*    encoded in X S,8 bits */
  k^=24;                                        /* change sides back        */
- --Z;return m//+=m<e;                            /* delayed-loss bonus       */
+ --Z;return m;//+=m<e;                            /* delayed-loss bonus       */
 }
 
 void serialBoard(){
