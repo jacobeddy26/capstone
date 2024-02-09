@@ -1,5 +1,5 @@
 #include <Wire.h>
-#include <Stepper.h>
+#include <Servo.h>
 
 // Define the x, y coordinates for each square on the chessboard
 const int squareCoordinates[8][8][2] = {
