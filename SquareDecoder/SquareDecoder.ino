@@ -1,6 +1,4 @@
 #include <Wire.h>
-#include <Servo.h>
-#include <math.h>
 
 // Define the x, y coordinates for each square on the chessboard
 const int squareCoordinates[8][8][2] = {
@@ -9,18 +7,20 @@ const int squareCoordinates[8][8][2] = {
 };
 
 // Define the home position for the arm
-const int homePosition[2] = { /* x-coordinate */, /* y-coordinate */ };
-
-// Define servo pins for the arm
-const int servoPin1 = /* Servo pin number */;
-const int servoPin2 = /* Servo pin number */;
+const int homePosition[2] = { /* x-coordinate ,  y-coordinate */ };
 
 // Define arm dimensions
-const float L1 = /* Length of first arm */;
+const float L1 = /* Length of first arm */
 const float L2 = /* Length of second arm */;
 
-Servo servo1;
-Servo servo2;
+// Define stepper motor control pins
+const int stepPin1 = /* Stepper motor step pin */;
+const int dirPin1 = /* Stepper motor direction pin */;
+const int stepPin2 = /* Stepper motor step pin */;
+const int dirPin2 = /* Stepper motor direction pin */;
+
+// Define steps per revolution for the stepper motors
+const int stepsPerRevolution = 360 / 0.35;
 
 // Function to convert chess notation to source and destination squares
 void parseChessMove(String move, int &srcX, int &srcY, int &destX, int &destY) {
@@ -31,7 +31,7 @@ void parseChessMove(String move, int &srcX, int &srcY, int &destX, int &destY) {
 }
 
 // Function to calculate inverse kinematics for SCARA arm
-void calculateIK(float x, float y, float &theta1, float &theta2) {
+void calculateAngles(float x, float y, float &theta1, float &theta2) {
   float r = sqrt(x*x + y*y);
   float phi = atan2(y, x);
   
@@ -46,15 +46,29 @@ void calculateIK(float x, float y, float &theta1, float &theta2) {
 void moveArmTo(int x, int y) {
   // Calculate inverse kinematics to get joint angles
   float theta1, theta2;
-  calculateIK(x, y, theta1, theta2);
+  calculateAngles(x, y, theta1, theta2);
   
-  // Convert joint angles to servo positions
-  int servoPos1 = /* convert theta1 to servo position */;
-  int servoPos2 = /* convert theta2 to servo position */;
+  // Convert joint angles to stepper motor steps
+  int steps1 = theta1 * stepsPerRevolution / 360;
+  int steps2 = theta2 * stepsPerRevolution / 360;
   
-  // Move servos to calculated positions
-  servo1.write(servoPos1);
-  servo2.write(servoPos2);
+  // Move stepper motors to calculated positions
+  moveStepper(steps1, stepPin1, dirPin1);
+  moveStepper(steps2, stepPin2, dirPin2);
+}
+
+// Function to move a stepper motor to the specified number of steps
+void moveStepper(int steps, int stepPin, int dirPin) {
+  // Set direction
+  digitalWrite(dirPin, steps > 0 ? HIGH : LOW);
+  
+  // Move the motor
+  for (int i = 0; i < abs(steps); ++i) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(500); // Adjust this delay for your motor
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(500); // Adjust this delay for your motor
+  }
 }
 
 // Function to pick up a chess piece from the specified square
@@ -101,9 +115,11 @@ void setup() {
   Wire.begin(8);                // Join I2C bus as a slave with address 8
   Wire.onReceive(receiveEvent); // Register event
   
-  // Attach servo motors
-  servo1.attach(servoPin1);
-  servo2.attach(servoPin2);
+  // Set up stepper motor control pins
+  pinMode(stepPin1, OUTPUT);
+  pinMode(dirPin1, OUTPUT);
+  pinMode(stepPin2, OUTPUT);
+  pinMode(dirPin2, OUTPUT);
   
   // Move arm to home position
   moveArmTo(homePosition[0], homePosition[1]);
