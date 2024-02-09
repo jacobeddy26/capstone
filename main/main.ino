@@ -14,8 +14,8 @@
 #define rook 16
 #define bishop 12
 
-LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);        /* Pins to control LCD display */
-int adc_key_val[5] ={50, 200, 400, 600, 800 };  /* Analog values from keypad */
+LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);        // Pins to control LCD display
+int adc_key_val[5] ={50, 200, 400, 600, 800 };  // Analog values from keypad
 int scaraSA = 3;                                // Slave Address for SCARA controller
 int boardSA = 2;                                // Slave Address for Board/LCD controller
 int engineSA = 1;                               // Slave Address for Chess Engine controller
