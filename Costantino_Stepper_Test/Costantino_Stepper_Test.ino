@@ -99,9 +99,6 @@ void moveElbow() {
 
 }
 
-// Example Usage:
-// moveArmToSquare(4, 3)  // Move to square (4, 3) on the chessboard
-
 /*This function determines the clockwise angular movement required for the motor
 and calculates the step movements for the motor to a 0.35 degree accuracy */
 void moveCW(int angle) {
