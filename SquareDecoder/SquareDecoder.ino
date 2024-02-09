@@ -8,17 +8,17 @@ const int squareCoordinates[8][8][2] = {
 };
 
 // Define the home position for the arm
-const int homePosition[2] = { /* x-coordinate */, /* y-coordinate */ };
+const int homePosition[2] = { 0,0 }; // { x-coordinate, y-coordinate }
 
 // Define arm dimensions
-const float L1 = /* Length of first arm */;
-const float L2 = /* Length of second arm */;
+const float L1 = 7.5; // Length of first arm
+const float L2 = 7.5; // Length of second arm
 
 // Define stepper motor control pins
-const int stepPin1 = /* Stepper motor step pin */;
-const int dirPin1 = /* Stepper motor direction pin */;
-const int stepPin2 = /* Stepper motor step pin */;
-const int dirPin2 = /* Stepper motor direction pin */;
+const int stepPin1 = ; // Stepper motor step pin
+const int dirPin1 = ; // Stepper motor direction pin
+const int stepPin2 = ; // Stepper motor step pin 
+const int dirPin2 = ; // Stepper motor direction pin
 
 // Define steps per revolution for the stepper motors
 const int stepsPerRevolution = 360 / 0.35;
