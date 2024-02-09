@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include <Stepper.h>
 
 // Define the x, y coordinates for each square on the chessboard
 const int squareCoordinates[8][8][2] = {
@@ -7,10 +8,10 @@ const int squareCoordinates[8][8][2] = {
 };
 
 // Define the home position for the arm
-const int homePosition[2] = { /* x-coordinate ,  y-coordinate */ };
+const int homePosition[2] = { /* x-coordinate */, /* y-coordinate */ };
 
 // Define arm dimensions
-const float L1 = /* Length of first arm */
+const float L1 = /* Length of first arm */;
 const float L2 = /* Length of second arm */;
 
 // Define stepper motor control pins
@@ -22,6 +23,73 @@ const int dirPin2 = /* Stepper motor direction pin */;
 // Define steps per revolution for the stepper motors
 const int stepsPerRevolution = 360 / 0.35;
 
+// Define the electromagnet and servo pins
+const int electromagnetPin = 40;
+const int servoPin = 38;
+
+// Define the resting and maximum piece height
+const int RESTING_HEIGHT = 100;
+const int MAX_PIECE_HEIGHT = 56;
+
+// Define the heights of each type of chess piece
+const int PIECE_HEIGHTS[] = {41, 34, 20, 28, 24, 19};
+
+// Define the Gripper class
+class Gripper {
+private:
+    Servo servo;
+    int previousZ;
+
+public:
+    Gripper() : previousZ(-1) {
+        pinMode(servoPin, OUTPUT);
+        pinMode(electromagnetPin, OUTPUT);
+    }
+
+    void calibrate() {
+        move(RESTING_HEIGHT);
+    }
+
+    void move(int z) {
+        z = constrain(z, 0, 100);
+        int dc = (z * 0.067) + 4;
+        servo.writeMicroseconds(dc * 100);
+        int t = (previousZ == -1) ? 1000 : abs(previousZ - z) / 10 + 500;
+        delay(t);
+        servo.detach();
+        previousZ = z;
+    }
+
+    void electromagnet(bool on) {
+        digitalWrite(electromagnetPin, on ? HIGH : LOW);
+    }
+
+    void pickup(int pieceType) {
+        int pieceHeight = PIECE_HEIGHTS[pieceType];
+        move(pieceHeight);
+        delay(400);
+        electromagnet(true);
+        delay(200);
+        move(RESTING_HEIGHT + pieceHeight);
+    }
+
+    void dropoff(int pieceType) {
+        int pieceHeight = PIECE_HEIGHTS[pieceType];
+        move(pieceHeight);
+        delay(200);
+        electromagnet(false);
+        delay(400);
+        move(RESTING_HEIGHT);
+    }
+
+    void cleanup() {
+        digitalWrite(electromagnetPin, LOW);
+        digitalWrite(servoPin, LOW);
+    }
+};
+
+Gripper gripper;
+
 // Function to convert chess notation to source and destination squares
 void parseChessMove(String move, int &srcX, int &srcY, int &destX, int &destY) {
   srcX = move.charAt(0) - 'a'; // Convert column character to index
@@ -31,7 +99,7 @@ void parseChessMove(String move, int &srcX, int &srcY, int &destX, int &destY) {
 }
 
 // Function to calculate inverse kinematics for SCARA arm
-void calculateAngles(float x, float y, float &theta1, float &theta2) {
+void calculateIK(float x, float y, float &theta1, float &theta2) {
   float r = sqrt(x*x + y*y);
   float phi = atan2(y, x);
   
@@ -46,7 +114,7 @@ void calculateAngles(float x, float y, float &theta1, float &theta2) {
 void moveArmTo(int x, int y) {
   // Calculate inverse kinematics to get joint angles
   float theta1, theta2;
-  calculateAngles(x, y, theta1, theta2);
+  calculateIK(x, y, theta1, theta2);
   
   // Convert joint angles to stepper motor steps
   int steps1 = theta1 * stepsPerRevolution / 360;
@@ -71,24 +139,6 @@ void moveStepper(int steps, int stepPin, int dirPin) {
   }
 }
 
-// Function to pick up a chess piece from the specified square
-void pickUpPiece(int x, int y) {
-  // Move the arm to the source square
-  moveArmTo(squareCoordinates[x][y][0], squareCoordinates[x][y][1]);
-  
-  // Perform actions to pick up the piece
-  // Implement your code here
-}
-
-// Function to put down a chess piece to the specified square
-void putDownPiece(int x, int y) {
-  // Move the arm to the destination square
-  moveArmTo(squareCoordinates[x][y][0], squareCoordinates[x][y][1]);
-  
-  // Perform actions to put down the piece
-  // Implement your code here
-}
-
 // Function to receive data over I2C
 void receiveEvent(int numBytes) {
   String move = "";
@@ -101,10 +151,13 @@ void receiveEvent(int numBytes) {
   parseChessMove(move, srcX, srcY, destX, destY);
   
   // Pick up piece from source square
-  pickUpPiece(srcX, srcY);
+  gripper.pickup(/* pass the piece type */);
+  
+  // Move arm to destination square
+  moveArmTo(squareCoordinates[destX][destY][0], squareCoordinates[destX][destY][1]);
   
   // Put down piece to destination square
-  putDownPiece(destX, destY);
+  gripper.dropoff(/* pass the piece type */);
   
   // Return arm to home position
   moveArmTo(homePosition[0], homePosition[1]);
@@ -123,6 +176,9 @@ void setup() {
   
   // Move arm to home position
   moveArmTo(homePosition[0], homePosition[1]);
+  
+  // Calibrate the gripper
+  gripper.calibrate();
 }
 
 void loop() {
