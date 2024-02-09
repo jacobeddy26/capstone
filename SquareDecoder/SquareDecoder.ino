@@ -1,62 +1,114 @@
-#include <Arduino.h>
+#include <Wire.h>
+#include <Servo.h>
+#include <math.h>
 
-typedef struct {
-    char file;
-    int rank;
-} ChessSquare;
+// Define the x, y coordinates for each square on the chessboard
+const int squareCoordinates[8][8][2] = {
+  // Define the x, y coordinates for each square on the chessboard
+  // You need to define these coordinates based on your setup
+};
 
-typedef struct {
-    char label;
-    int measurement;
-} SquareMeasurement;
+// Define the home position for the arm
+const int homePosition[2] = { /* x-coordinate */, /* y-coordinate */ };
 
-// Function to convert chess square to coordinates
-void chessSquareToCoordinates(ChessSquare chess_square, int* x, int* y) {
-    // Define the predefined measurements for each square
-    SquareMeasurement square_measurements[] = {
-        {'a', 0}, {'b', 2}, {'c', 4}, {'d', 6}, {'e', 8}, {'f', 10}, {'g', 12}, {'h', 14},
-        {'1', 0}, {'2', 2}, {'3', 4}, {'4', 6}, {'5', 8}, {'6', 10}, {'7', 12}, {'8', 14}
-    };
+// Define servo pins for the arm
+const int servoPin1 = /* Servo pin number */;
+const int servoPin2 = /* Servo pin number */;
 
-    // Find measurements corresponding to the file and rank
-    int file_measurement = 0;
-    int rank_measurement = 0;
+// Define arm dimensions
+const float L1 = /* Length of first arm */;
+const float L2 = /* Length of second arm */;
 
-    for (int i = 0; i < sizeof(square_measurements) / sizeof(SquareMeasurement); i++) {
-        if (chess_square.file == square_measurements[i].label) {
-            file_measurement = square_measurements[i].measurement;
-        }
-        if (chess_square.rank == square_measurements[i].label) {
-            rank_measurement = square_measurements[i].measurement;
-        }
-    }
+Servo servo1;
+Servo servo2;
 
-    // Map file and rank to x, y coordinates using predefined measurements
-    *x = file_measurement;
-    *y = rank_measurement;
+// Function to convert chess notation to source and destination squares
+void parseChessMove(String move, int &srcX, int &srcY, int &destX, int &destY) {
+  srcX = move.charAt(0) - 'a'; // Convert column character to index
+  srcY = 8 - (move.charAt(1) - '0'); // Convert row character to index
+  destX = move.charAt(2) - 'a'; // Convert column character to index
+  destY = 8 - (move.charAt(3) - '0'); // Convert row character to index
+}
+
+// Function to calculate inverse kinematics for SCARA arm
+void calculateIK(float x, float y, float &theta1, float &theta2) {
+  float r = sqrt(x*x + y*y);
+  float phi = atan2(y, x);
+  
+  float A = (L1*L1 - L2*L2 + r*r) / (2 * L1 * r);
+  float B = (L1*L1 + L2*L2 - r*r) / (2 * L1 * L2);
+  
+  theta2 = acos(B);
+  theta1 = phi - acos(A);
+}
+
+// Function to move the arm to the specified x, y coordinates
+void moveArmTo(int x, int y) {
+  // Calculate inverse kinematics to get joint angles
+  float theta1, theta2;
+  calculateIK(x, y, theta1, theta2);
+  
+  // Convert joint angles to servo positions
+  int servoPos1 = /* convert theta1 to servo position */;
+  int servoPos2 = /* convert theta2 to servo position */;
+  
+  // Move servos to calculated positions
+  servo1.write(servoPos1);
+  servo2.write(servoPos2);
+}
+
+// Function to pick up a chess piece from the specified square
+void pickUpPiece(int x, int y) {
+  // Move the arm to the source square
+  moveArmTo(squareCoordinates[x][y][0], squareCoordinates[x][y][1]);
+  
+  // Perform actions to pick up the piece
+  // Implement your code here
+}
+
+// Function to put down a chess piece to the specified square
+void putDownPiece(int x, int y) {
+  // Move the arm to the destination square
+  moveArmTo(squareCoordinates[x][y][0], squareCoordinates[x][y][1]);
+  
+  // Perform actions to put down the piece
+  // Implement your code here
+}
+
+// Function to receive data over I2C
+void receiveEvent(int numBytes) {
+  String move = "";
+  while (Wire.available()) {
+    char c = Wire.read();
+    move += c;
+  }
+  
+  int srcX, srcY, destX, destY;
+  parseChessMove(move, srcX, srcY, destX, destY);
+  
+  // Pick up piece from source square
+  pickUpPiece(srcX, srcY);
+  
+  // Put down piece to destination square
+  putDownPiece(destX, destY);
+  
+  // Return arm to home position
+  moveArmTo(homePosition[0], homePosition[1]);
 }
 
 void setup() {
-    Serial.begin(9600);
+  // Initialize I2C communication
+  Wire.begin(8);                // Join I2C bus as a slave with address 8
+  Wire.onReceive(receiveEvent); // Register event
+  
+  // Attach servo motors
+  servo1.attach(servoPin1);
+  servo2.attach(servoPin2);
+  
+  // Move arm to home position
+  moveArmTo(homePosition[0], homePosition[1]);
 }
 
 void loop() {
-    // Example Usage:
-    ChessSquare chess_square = {'b',  '2'};
-    int x, y;
-
-    // Call the function to get coordinates
-    chessSquareToCoordinates(chess_square, &x, &y);
-
-    // Print the coordinates
-    Serial.print("The coordinates for square ");
-    Serial.print(chess_square.file);
-    Serial.print(chess_square.rank);
-    Serial.print(" are: (");
-    Serial.print(x);
-    Serial.print(", ");
-    Serial.print(y);
-    Serial.println(")");
-
-    delay(1000);  // Delay for readability, adjust as needed
+  // Nothing to do in the loop as all actions are handled in the receiveEvent function
 }
