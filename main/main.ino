@@ -14,13 +14,14 @@
 #define rook 16
 #define bishop 12
 
+#define scaraSA 3                                // Slave Address for SCARA controller
+#define boardSA 2                                // Slave Address for Board/LCD controller
+#define engineSA 1                               // Slave Address for Chess Engine controller
+
 LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);        // Pins to control LCD display
 int adc_key_val[5] ={50, 200, 400, 600, 800 };  // Analog values from keypad
-int scaraSA = 3;                                // Slave Address for SCARA controller
-int boardSA = 2;                                // Slave Address for Board/LCD controller
-int engineSA = 1;                               // Slave Address for Chess Engine controller
 
-String bestMove;
+char bestMove[5] = {0}; // Initialize best move globally
 
 void setup(){
     Wire.begin();
@@ -40,13 +41,12 @@ void setup(){
 void loop(){
     int r;
     digitalWrite(13, LOW);
-
-    // Calculate and output optimal move for the user
-    // This should be done before prompting the user for input
-    calculateUserOptimalMove();
-    
+  
     // Print last movements
     printLastMovs();
+
+    // Calculate and output human's best move
+    calculateAndOutputHumanMove();
 
     // Take move from human
     x1=x2=y1=y2=-1;
@@ -629,24 +629,16 @@ void putPiece(int x, int y, char piece){
     lcd.write(ind);
 }
 
-void calculateUserOptimalMove() {
-    // Implement simplified minimax algorithm here
-    // Calculate the best move for the user and store it in the bestMove variable
-    // Example: bestMove = "e2e4";
-    // Output the calculated move to the serial monitor
-    Serial.println("Calculating user's optimal move...");
-    String bestMove;
-    
-    // Iterate over all possible moves for the user
-    for each possible move {
-        // Simulate the move and evaluate the resulting board position
-        int score = -D(-I, I, 1, 0, 0, 1); // Negate the result for the user's perspective
-        
-        // If the evaluated score is better than the current best score, update the best move
-        if (score > bestScore) {
-            bestScore = score;
-            bestMove = move;
-        }
+void calculateAndOutputHumanMove() {
+    int r;
+    K = *c - 16 * c[1] + 799, L = c[2] - 16 * c[3] + 799; // parse entered move
+    N = 0;
+    T = 0x3F; // T=Computer Play strength
+    r = D(-I, I, Q, O, 0, 3); // Calculate human's best move
+    if (!(r > -I + 1)) {
+        Serial.println("Error: Human's best move calculation failed.");
+        return;
     }
-    Serial.println("User's best move: " + String(bestMove));
+    Serial.print("Human's best move: ");
+    Serial.println(c);
 }
