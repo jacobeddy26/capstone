@@ -46,7 +46,7 @@ void loop(){
     printLastMovs();
 
     // Calculate and output human's best move
-    calculateAndOutputHumanMove();
+    UserBestMove();
 
     // Take move from human
     x1=x2=y1=y2=-1;
@@ -629,16 +629,20 @@ void putPiece(int x, int y, char piece){
     lcd.write(ind);
 }
 
-void calculateAndOutputHumanMove() {
+void UserBestMove() {
     int r;
-    K = *c - 16 * c[1] + 799, L = c[2] - 16 * c[3] + 799; // parse entered move
-    N = 0;
-    T = 0x3F; // T=Computer Play strength
+    // Save the current state of the board
+    bkp();
+    // Calculate the best move for the user
+    k ^= 24; // Switch sides for user move
     r = D(-I, I, Q, O, 0, 3); // Calculate human's best move
+    k ^= 24; // Switch back sides for computer's move
     if (!(r > -I + 1)) {
         Serial.println("Error: Human's best move calculation failed.");
         return;
     }
+    // Output the best move for the user
     Serial.print("Human's best move: ");
     Serial.println(c);
 }
+

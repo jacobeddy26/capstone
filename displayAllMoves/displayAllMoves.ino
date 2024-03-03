@@ -1,12 +1,9 @@
 #include <Arduino.h>
 #include <stdint.h>
 #include <avr/pgmspace.h>
+#include "Chessuino.h"
 
 #define DATABASE_SIZE 8082
-
-const uint32_t PROGMEM dataBase[DATABASE_SIZE] = {
-    // Chessuino database
-};
 
 void validateAndPrintMove(int pieceType, int startFile, int startRank, int destFile, int destRank) {
     // Perform move validation based on pieceType.
