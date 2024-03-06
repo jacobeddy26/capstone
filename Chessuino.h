@@ -184,7 +184,7 @@ byte esq[8] = {
 /*                                         */
 /*  Build from PGN txt files               */
 /*  Just consider black movements          */
-/*  The uint32 array canÂ´t size over 8191  */
+/*  The uint32 array can´t size over 8191  */
 /*******************************************/
 
 // TOTAL 898  movements

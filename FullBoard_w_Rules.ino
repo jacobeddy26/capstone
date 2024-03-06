@@ -11,7 +11,22 @@ Adafruit_CAP1188 cap6 = Adafruit_CAP1188();
 Adafruit_CAP1188 cap7 = Adafruit_CAP1188();
 Adafruit_CAP1188 cap8 = Adafruit_CAP1188();
 
+#define engineSA 1   // Slave Address for the chess engine controller
+#define boardSA 2    // Slave Address for the board/LCD controller
+#define scaraSA 3    // Slave Address for the SCARA controller
 #define TCAADDR 0x70
+
+#define pawn 1
+#define knight 2
+#define bishop 3
+#define rook 4
+#define queen 5
+#define king 6
+
+int promoteFlag;
+bool promoteWhite=false;
+bool promoteBlack=false
+int dataIn;
 
 //This array contains the binary version of the current board that the inputs from the capacitive touch sensors will be compared against to see if a move has been made
 int old_boardState[64]={1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -34,7 +49,8 @@ String Encoder[64]={"a1","b1","c1","d1","e1","f1","g1","h1","a2","b2","c2","d2",
 void setup()
 {
     Serial.begin(115200);
-    Wire.begin();
+    Wire.begin(boardSA); // Initialize I2C communication with set slave address
+    Wire.onReceive(receiveEvent);
     
 
     //Code to Test that Multiplexer and Cap Boards are set up properly
@@ -342,20 +358,19 @@ void UpdateBoardPosition(int PieceWasHere, int PieceMovedHere,int AnotherPieceWa
 
     //Piece Promotion Code 
     /*
-    int promoteFlag;
     if(typesAndLocations[PieceMovedHere]==1 & PieceColors[PieceMovedHere]==1 % (PieceMovedHere==56 | PieceMovedHere==57 | PieceMovedHere==58 | PieceMovedHere==59 | PieceMovedHere==60 | PieceMovedHere==61 | PieceMovedHere==62 | PieceMovedHere==63))
     {
       //send Piece Promotion Flag for White Pieces
-      promoteFlag = 1000;
+      promoteWhite=true;
+      promote(promoteWhite,promoteBlack);
     }
     else if(typesAndLocations[PieceMovedHere]==1 & PieceColors[PieceMovedHere]==2 % (PieceMovedHere==0 | PieceMovedHere==1 | PieceMovedHere==2 | PieceMovedHere==3 | PieceMovedHere==4 | PieceMovedHere==5 | PieceMovedHere==6 | PieceMovedHere==7))
     {
       //Send Piece Promotion Flag for Black Pieces
-      promoteFlag = 1001;
+      promoteBlack=true;
+      promote(promoteWhite,promoteBlack);
     }
-    Wire.beginTransmission(1);
-    Wire.write(promoteFlag);
-    Wire.endTransmission();
+
     */
   }
 
@@ -418,17 +433,6 @@ void UpdateBoardPosition(int PieceWasHere, int PieceMovedHere,int AnotherPieceWa
 
 }
 
-void receiveEvent() {
-  int dataIn;
-  if(Wire.available()) {
-    dataIn = Wire.read();
-  }
-  switch(dataIn) {
-    case 1:
-      break;
-  }
-}
-
 void tcaselect(uint8_t i) 
 {
   if (i > 7) return;
@@ -436,4 +440,53 @@ void tcaselect(uint8_t i)
   Wire.beginTransmission(TCAADDR);
   Wire.write(1 << i);
   Wire.endTransmission();  
+}
+
+// function that executes whenever data is received from the master
+// this function is registered as an event,  see setup()
+void receiveEvent() {
+   if(Wire.available()) {
+      dataIn = Wire.read();
+      selectedPiece(dataIn);
+  }
+}
+
+void promote(bool flagWhite, bool flagBlack) {
+    if(flagWhite)
+    {
+      //send Piece Promotion Flag for White Pieces
+      promoteFlag = 1000;
+      Serial.println("White is Promoting!");
+    }
+    else if(flagBlack) {
+      //Send Piece Promotion Flag for Black Pieces
+      promoteFlag = 1001;
+      Serial.println("Black is Promoting!");
+    }
+    Wire.beginTransmission(engineSA);
+    Wire.write(promoteFlag);
+    Wire.endTransmission();
+    promoteBlack=false;
+    promoteWhite=false;
+}
+
+void selectedPiece(int piece) {
+  switch (piece)
+  {
+   case queen:
+      Serial.print("Promoted to Queen");         // print the piece
+      break;
+   case knight:
+      Serial.print("Promoted to Knight");         // print the piece
+      break;
+   case rook:
+      Serial.print("Promoted to Rook");         // print the piece
+      break;
+   case bishop:
+      Serial.print("Promoted to Bishop");         // print the piece
+      break;
+  default:
+      Serial.print("ERROR");
+      break;
+  }
 }
