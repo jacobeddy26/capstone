@@ -2,6 +2,7 @@ int switch1=8;
 int switch2=9;
 int magnet=10;
 int input;
+#define MAX_THROW 2000
 
 void setup() {
   // put your setup code here, to run once:
@@ -12,42 +13,33 @@ void setup() {
 }
 
 void loop() {
- 
- /*
   extend();
-  delay(3000);
-  hold();
-  delay(3000);
-  */
-  digitalWrite(magnet,HIGH);
-  /*
-  extend();
-  delay(3000);
-  hold();
-  delay(3000);
+  hold(8000);
   retract();
-  delay(3000);
-  */
-  
-
-  
+  //digitalWrite(magnet,HIGH);
 }
 
 void retract()
 {
-  digitalWrite(switch1,LOW);
-  digitalWrite(switch2,HIGH);
+   Serial.println("Retracting!");
+   digitalWrite(switch1,LOW);
+   digitalWrite(switch2,HIGH);
+   delay(MAX_THROW);
 }
 
-void hold()
+void hold(int time)
 {
-  digitalWrite(switch1,HIGH);
-  digitalWrite(switch2,HIGH);
+   Serial.println("Holding!");
+   digitalWrite(switch1,LOW);
+   digitalWrite(switch2,LOW);
+   delay(time);
 }
 
 void extend()
 {
-  digitalWrite(switch1,HIGH);
-  digitalWrite(switch2,LOW);
+   Serial.println("Extending!");
+   digitalWrite(switch1,HIGH);
+   digitalWrite(switch2,LOW);
+   delay(MAX_THROW);
 }
 
