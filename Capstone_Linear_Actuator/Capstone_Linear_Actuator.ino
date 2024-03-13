@@ -32,7 +32,7 @@ void hold(int time)
    Serial.println("Holding!");
    digitalWrite(switch1,LOW);
    digitalWrite(switch2,LOW);
-   delay(time);
+   delay(time+MAX_THROW);
 }
 
 void extend()
