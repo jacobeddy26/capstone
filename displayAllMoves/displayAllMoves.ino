@@ -9,10 +9,13 @@
 #include <LiquidCrystal.h>
 #include "Chessuino.h"
 
-#define  queen 24
-#define knight 8
-#define rook 16
-#define bishop 12
+#define pawn 1
+#define knight 2
+#define bishop 3
+#define rook 4
+#define queen 5
+#define king 6
+
 
 #define scaraSA 3                                // Slave Address for SCARA controller
 #define boardSA 2                                // Slave Address for Board/LCD controller
@@ -46,7 +49,7 @@ void loop(){
     printLastMovs();
 
     // Display All Possible Moves
-    displayPossibleMoves("b2");
+    displayPossibleMoves("b1", 2);
 
     // Calculate and output human's best move
     UserBestMove();
@@ -649,56 +652,55 @@ void UserBestMove() {
     Serial.println(c);
 }
 
-// Function to convert chess notation to board indices
-bool convertChessNotationToIndices(char* notation, int& x, int& y) {
-    if (notation[0] < 'a' || notation[0] > 'h' || notation[1] < '1' || notation[1] > '8') {
-        // Invalid notation
-        return false;
-    }
-    x = notation[0] - 'a';
-    y = '8' - notation[1];
-    return true;
-}
-
 // Function to calculate and display all possible moves for a selected piece
-void displayPossibleMoves(char* square) {
-    int x, y;
-    if (!convertChessNotationToIndices(square, x, y)) {
-        Serial.println("Invalid square notation.");
-        return;
-    }
-
-    // Calculate possible moves for the piece at position (x, y)
-    int sourceSquare = y * 8 + x;
-    char piece = b[sourceSquare];
-    char pieceType = piece & 7;
-    boolean isWhite = piece & 8;
-
-    Serial.print("Possible moves for piece at ");
-    Serial.print(square);
-    Serial.print(": ");
-
+void displayPossibleMoves(const char* sourceSquare, int pieceType) {
+   char tmp[5];
+    // Convert the source square to its numerical representation
+    int sourceSquareNum = ((sourceSquare[1] - '1') * 8) + (sourceSquare[0] - 'a');
+    getByteBoard();
+    
+    // Extract source and destination squares
+    char source[2], destination[2];
+    // Iterate through the database entries
     for (int i = 0; i < INDM; i++) {
-        int block = ((seed + i) % INDM) * 9;
-        boolean found = true;
-        for (int j = 0; j < 8; j++) {
-            uint32_t db = pgm_read_dword_near(dataBase + block + j);
-            if (db == sourceSquare) { // Check if move originates from the source square
-                // Filter out moves based on the piece type
-                char targetPieceType = (db >> 24) & 0x7;
-                if (pieceType == targetPieceType || pieceType == knight || targetPieceType == knight) {
-                    int destSquare = (db >> 16) & 0xFF;
-                    int destX = destSquare % 8;
-                    int destY = destSquare / 8;
-                    char targetSquare[3];
-                    targetSquare[0] = 'a' + destX;
-                    targetSquare[1] = '8' - destY;
-                    targetSquare[2] = '\0';
-                    Serial.print(targetSquare);
-                    Serial.print(" ");
-                }
+        int block = ((seed+i)%INDM)*9;              /* Start in any block      */
+        for(int j=0; j<8; j++){
+            uint32_t entry= pgm_read_dword_near(dataBase+block+j);
+            if( byteBoard[j] != entry ){
+                //Serial.println("Error getting database entry");
             }
-        }
-    }
-    Serial.println();
+            Serial.print("Entry: "); Serial.println(entry);               
+            tmp[4]=0;
+            tmp[3] = (char)(entry&0x000000FF)+'0';
+            entry>>=8;
+            tmp[2] = (char)(entry&0x000000FF)-0xA+'a';
+            entry>>=8;
+            tmp[1] = (char)(entry&0x000000FF)+'0';
+            entry>>=8;
+            tmp[0] = (char)(entry&0x000000FF)-0xA+'a';
+            source[0]=tmp[0]; source[1]=tmp[1];
+            destination[0] = tmp[2]; destination[1] = tmp[3];
+            Serial.print("Source: "); Serial.print(source[0]); Serial.println(source[1]);
+            Serial.print("Destination: "); Serial.print(destination[0]); Serial.println(destination[1]);
+            /*
+            // Filter moves originating from the given source square
+            if (source == sourceSquareNum) {
+                  // Extract the piece type
+                  int entryPieceType = entry & 0xFF;
+                  
+                  // Check if the piece type matches the selected piece type
+                  if (entryPieceType == pieceType) {
+                     // Output the move to the serial monitor
+                     char move[6];
+                     move[0] = 'a' + (destination % 8);
+                     move[1] = '1' + (destination / 8);
+                     move[2] = '\0';
+                     //Serial.println(move);
+                  }
+                  
+            }*/
+         }
+   }
 }
+
+
