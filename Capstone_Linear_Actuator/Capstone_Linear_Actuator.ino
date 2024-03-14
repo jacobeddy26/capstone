@@ -13,15 +13,15 @@ void setup() {
 }
 
 void loop() {
-  extend();
-  hold(8000);
-  retract();
-  //digitalWrite(magnet,HIGH);
+   extend();
+   hold(5000);
+   retract();
+   delay(500);
 }
 
 void retract()
 {
-   Serial.println("Retracting!");
+   grab();
    digitalWrite(switch1,LOW);
    digitalWrite(switch2,HIGH);
    delay(MAX_THROW);
@@ -29,7 +29,6 @@ void retract()
 
 void hold(int time)
 {
-   Serial.println("Holding!");
    digitalWrite(switch1,LOW);
    digitalWrite(switch2,LOW);
    delay(time+MAX_THROW);
@@ -37,9 +36,16 @@ void hold(int time)
 
 void extend()
 {
-   Serial.println("Extending!");
    digitalWrite(switch1,HIGH);
    digitalWrite(switch2,LOW);
    delay(MAX_THROW);
+   drop();
 }
 
+void grab() {
+   digitalWrite(magnet,HIGH);
+}
+
+void drop() {
+   digitalWrite(magnet,LOW);
+}
