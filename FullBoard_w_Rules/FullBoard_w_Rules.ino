@@ -23,9 +23,12 @@ Adafruit_CAP1188 cap8 = Adafruit_CAP1188();
 #define queen 5
 #define king 6
 
+#define white 1
+#define black 2
+
 int promoteFlag;
 bool promoteWhite=false;
-bool promoteBlack=false
+bool promoteBlack=false;
 int dataIn;
 
 //This array contains the binary version of the current board that the inputs from the capacitive touch sensors will be compared against to see if a move has been made
@@ -429,8 +432,16 @@ void UpdateBoardPosition(int PieceWasHere, int PieceMovedHere,int AnotherPieceWa
     }
     
     MoveMessage=Encoder[PieceWasHere]+Encoder[PieceMovedHere];
+    Serial.println(MoveMessage);
   }
-
+   char userMove[5];
+   for(int i = 0; i < 4; i++) {
+      userMove[i] = MoveMessage.charAt(i);
+   }
+   userMove[4]='\0';
+   Wire.beginTransmission(engineSA);
+   Wire.write(userMove,5);
+   Wire.endTransmission();
 }
 
 void tcaselect(uint8_t i) 

@@ -4,7 +4,6 @@
 bool isPieceLifted(int row, int col) {
     // Implement your code to check if a piece is lifted from the sensor at the specified row and col
     // Return true if a piece is lifted, false otherwise
-    // Example placeholder: replace with actual implementation
     return digitalRead(row * 8 + col) == LOW;
 }
 
@@ -49,5 +48,5 @@ void loop() {
         Serial.println(chessMove);
     }
 
-    delay(100);  // Adjust delay for performance, depending on your sensor and application
+    delay(100);  // Adjust delay for performance
 }

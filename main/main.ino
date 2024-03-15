@@ -9,10 +9,12 @@
 #include <LiquidCrystal.h>
 #include "Chessuino.h"
 
-#define  queen 24
-#define knight 8
-#define rook 16
-#define bishop 12
+#define pawn 1
+#define knight 2
+#define bishop 3
+#define rook 4
+#define queen 5
+#define king 6
 
 #define scaraSA 3                                // Slave Address for SCARA controller
 #define boardSA 2                                // Slave Address for Board/LCD controller
@@ -25,6 +27,7 @@ char bestMove[5] = {0}; // Initialize best move globally
 
 void setup(){
     Wire.begin();
+    Wire.onReceive(receiveEvent);
     Serial.begin(9600);
     Serial.println("  *** CHESSuino ***");
     
@@ -46,7 +49,7 @@ void loop(){
     printLastMovs();
 
     // Calculate and output human's best move
-    UserBestMove();
+    //UserBestMove();
 
     // Take move from human
     x1=x2=y1=y2=-1;
@@ -147,7 +150,10 @@ void takeMove(){
     printMN(mn, 1);
 
     printMove();
-    for(;;){
+    while(Wire.available() != 5);
+    
+    /*for(;;){
+      
         int k = waitForKey();
         delay(200);
         
@@ -200,7 +206,8 @@ void takeMove(){
         }
         
         printMove();
-    }
+    }*/
+    printMove();
 }
 
 void printMove(){
@@ -644,5 +651,20 @@ void UserBestMove() {
     // Output the best move for the user
     Serial.print("Human's best move: ");
     Serial.println(c);
+}
+
+// function that executes whenever data is received from the master
+// this function is registered as an event,  see setup()
+void receiveEvent() {
+   if(Wire.available() == 5) {
+      for (int i = 0; i < 5; i++)
+      {
+         c[i] = Wire.read();
+         Serial.print(c[i]);
+      }
+      c[4] = '\0';
+  } else {
+      // Different data received
+  }
 }
 

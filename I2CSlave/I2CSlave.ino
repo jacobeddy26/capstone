@@ -4,10 +4,12 @@
 #define boardSA 2    // Slave Address for the board/LCD controller
 #define scaraSA 3    // Slave Address for the SCARA controller
 
-#define queen 24
-#define knight 8
-#define rook 16
-#define bishop 12
+#define pawn 1
+#define knight 2
+#define bishop 3
+#define rook 4
+#define queen 5
+#define king 6
 
 int promotePiece;
 bool flagWhite=true;
