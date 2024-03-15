@@ -1,4 +1,3 @@
-
 #include "Wire.h"
 #include <Adafruit_CAP1188.h>
 
@@ -26,27 +25,63 @@ Adafruit_CAP1188 cap8 = Adafruit_CAP1188();
 #define white 1
 #define black 2
 
+// Create a structure variable called myStructure
+struct {
+  uint8_t touched1;
+  uint8_t touched2;
+  uint8_t touched3;
+  uint8_t touched4;
+  uint8_t touched5;
+  uint8_t touched6;
+  uint8_t touched7;
+  uint8_t touched8;
+} capTouchInput;
+
 int promoteFlag;
 bool promoteWhite=false;
 bool promoteBlack=false;
 int dataIn;
 
 //This array contains the binary version of the current board that the inputs from the capacitive touch sensors will be compared against to see if a move has been made
-int old_boardState[64]={1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int old_boardState[64]={1, 1, 0, 0, 0, 0, 0, 0,
+                        0, 0, 0, 0, 0, 0, 0, 0, 
+                        0, 0, 0, 0, 0, 0, 0, 0, 
+                        0, 0, 0, 0, 0, 0, 0, 0, 
+                        0, 0, 0, 0, 0, 0, 0, 0, 
+                        0, 0, 0, 0, 0, 0, 0, 0, 
+                        0, 0, 0, 0, 0, 0, 0, 0, 
+                        0, 0, 0, 0, 0, 0, 0, 0};
 
 // piece type and location
 //0=none, 1=pawn, 2=knight, 3=bishop, 4=rook, 5=queen, 6=king
-int typesAndLocations[64]={6, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int typesAndLocations[64]={4, 2, 3, 6, 5, 3, 2, 4, 
+                           1, 1, 1, 1, 1, 1, 1, 1, 
+                           0, 0, 0, 0, 0, 0, 0, 0, 
+                           0, 0, 0, 0, 0, 0, 0, 0, 
+                           0, 0, 0, 0, 0, 0, 0, 0, 
+                           0, 0, 0, 0, 0, 0, 0, 0, 
+                           1, 1, 1, 1, 1, 1, 1, 1, 
+                           4, 2, 3, 6, 5, 3, 2, 4};
 
 //Counter recording how many moves have been made
 int NumberOfMovesMade=1;
 
 //Array containing color of each piece
 //0=no piece, 1=white, 2=black
-int PieceColors[64]={1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int PieceColors[64]={1, 1, 1, 1, 1, 1, 1, 1, 
+                     1, 1, 1, 1, 1, 1, 1, 1, 
+                     0, 0, 0, 0, 0, 0, 0, 0, 
+                     0, 0, 0, 0, 0, 0, 0, 0, 
+                     0, 0, 0, 0, 0, 0, 0, 0, 
+                     0, 0, 0, 0, 0, 0, 0, 0, 
+                     2, 2, 2, 2, 2, 2, 2, 2, 
+                     2, 2, 2, 2, 2, 2, 2, 2};
+
+int input[64];
 
 //Encoder Array, Contains strings of ID of each Square
 String Encoder[64]={"a1","b1","c1","d1","e1","f1","g1","h1","a2","b2","c2","d2","e2","f2","g2","h2","a3","b3","c3","d3","e3","f3","g3","h3","a4","b4","c4","d4","e4","f4","g4","h4","a5","b5","c5","d5","e5","f5","g5","h5","a6","b6","c6","d6","e6","f6","g6","h6","a7","b7","c7","d7","e7","f7","g7","h7","a8","b8","c8","d8","e8","f8","g8","h8"};
+String MoveMessage;
 
 // standard Arduino setup()
 void setup()
@@ -55,187 +90,20 @@ void setup()
     Wire.begin(boardSA); // Initialize I2C communication with set slave address
     Wire.onReceive(receiveEvent);
     
-
-    //Code to Test that Multiplexer and Cap Boards are set up properly
-    
-    Serial.println("\nTCAScanner ready!");
-
-    for (uint8_t t=0; t<8; t++) {
-      tcaselect(t);
-      Serial.print("TCA Port #"); Serial.println(t);
-
-      for (uint8_t addr = 0; addr<=127; addr++) {
-        if (addr == TCAADDR) continue;
-
-        Wire.beginTransmission(addr);
-        if (!Wire.endTransmission()) {
-          Serial.print("Found I2C 0x");  Serial.println(addr,HEX);
-        }
-      }
-    }
-    Serial.println("\ndone");
-
-    //Checking the initialization of each capacitive touch sensor 
-    tcaselect(0);
-    if (!cap1.begin()) 
-    {
-    Serial.println("CAP1188 not found");
-    while (1);
-    }
-    tcaselect(1);
-    if (!cap2.begin()) 
-    {
-    Serial.println("CAP1188 not found");
-    while (1);
-    }
-    tcaselect(2);
-    if (!cap3.begin()) 
-    {
-    Serial.println("CAP1188 not found");
-    while (1);
-    }
-    tcaselect(3);
-    if (!cap4.begin()) 
-    {
-    Serial.println("CAP1188 not found");
-    while (1);
-    }
-    tcaselect(4);
-    if (!cap5.begin()) 
-    {
-    Serial.println("CAP1188 not found");
-    while (1);
-    }
-    tcaselect(5);
-    if (!cap6.begin()) 
-    {
-    Serial.println("CAP1188 not found");
-    while (1);
-    }
-    tcaselect(6);
-    if (!cap7.begin()) 
-    {
-    Serial.println("CAP1188 not found");
-    while (1);
-    }
-    tcaselect(7);
-    if (!cap8.begin()) 
-    {
-    Serial.println("CAP1188 not found");
-    while (1);
-    }
-    Serial.println("CAP1188 found!");
+    initializeCapTouch();
 }
 
 void loop() 
 {
   //Pulling data from each capacitive touch sensor
-  tcaselect(0);
-  uint8_t touched1 = cap1.touched();
-  
-  tcaselect(1);
-  uint8_t touched2 = cap2.touched();
-  
-  tcaselect(2);
-  uint8_t touched3 = cap3.touched();
-  
-  tcaselect(3);
-  uint8_t touched4 = cap4.touched();
-  
-  tcaselect(4);
-  uint8_t touched5 = cap5.touched();
+  checkCapTouch();
 
-  tcaselect(5);
-  uint8_t touched6 = cap6.touched();
-
-  tcaselect(6);
-  uint8_t touched7 = cap7.touched();
-
-  tcaselect(7);
-  uint8_t touched8 = cap8.touched();
-  
-  int input[64];
   int PieceWasHere=-1;
   int AnotherPieceWasHere=-1; //Variable used when capturing pieces
   int PieceMovedHere=-1;
   int NumberOfChanges=0;
-  String MoveMessage="none";
 
-  //This block creates an input array from the sensor inputs, and compares the input array to the current boardstate known by the computer. 
-  //By comparing these arrays, the computer can identify moves made by the user when there are differences between the arrays.
-  for (uint8_t i=0; i<8; i++) 
-  {
-    if (touched1 & (1 << i)) 
-    {
-      input[i]=1;
-    }
-    else
-    {
-      input[i]=0;
-    }
-    
-    if (touched2 & (1 << i)) 
-    {
-      input[i+8]=1;
-    }
-    else
-    {
-      input[i+8]=0;
-    }
-    
-    if (touched3 & (1 << i)) 
-    {
-      input[i+16]=1;
-    }
-    else
-    {
-      input[i+16]=0;
-    }
-    
-    if (touched4 & (1 << i)) 
-    {
-      input[i+24]=1;
-    }
-    else
-    {
-      input[i+24]=0;
-    }
-    
-    if (touched5 & (1 << i)) 
-    {
-      input[i+32]=1;
-    }
-    else
-    {
-      input[i+32]=0;
-    }
-    if (touched6 & (1 << i)) 
-    {
-      input[i+40]=1;
-    }
-    else
-    {
-      input[i+40]=0;
-    }
-    if (touched7 & (1 << i)) 
-    {
-      input[i+48]=1;
-    }
-    else
-    {
-      input[i+48]=0;
-    }
-    if (touched8 & (1 << i)) 
-    {
-      input[i+56]=1;
-    }
-    else
-    {
-      input[i+56]=0;
-    }
-    
-  }
-
+  createBoardArray();
 
   for (uint8_t i=0; i<64; i++)
   {
@@ -263,7 +131,7 @@ void loop()
   }
   
   //Updating the Board Position if all prerequisites are met
-  UpdateBoardPosition(PieceWasHere,PieceMovedHere, AnotherPieceWasHere, NumberOfChanges, MoveMessage);
+  UpdateBoardPosition(PieceWasHere,PieceMovedHere, AnotherPieceWasHere, NumberOfChanges);
 
 
   Serial.println();
@@ -290,7 +158,7 @@ void loop()
 }
 
 
-void UpdateBoardPosition(int PieceWasHere, int PieceMovedHere,int AnotherPieceWasHere, int NumberOfChanges, String MoveMessage)
+void UpdateBoardPosition(int PieceWasHere, int PieceMovedHere,int AnotherPieceWasHere, int NumberOfChanges)
 {
   //This block of code is used to update the board when a piece has been moved
   if(PieceWasHere!=-1 & PieceMovedHere!=-1 & NumberOfChanges==2)
@@ -376,8 +244,6 @@ void UpdateBoardPosition(int PieceWasHere, int PieceMovedHere,int AnotherPieceWa
 
     */
   }
-
-
   // This block of code is used to update the board when a piece is being captured
   else if(PieceWasHere!=-1 & AnotherPieceWasHere!=-1 & NumberOfChanges==2)
   {
@@ -432,13 +298,14 @@ void UpdateBoardPosition(int PieceWasHere, int PieceMovedHere,int AnotherPieceWa
     }
     
     MoveMessage=Encoder[PieceWasHere]+Encoder[PieceMovedHere];
-    Serial.println(MoveMessage);
   }
+   Serial.println(MoveMessage);
    char userMove[5];
    for(int i = 0; i < 4; i++) {
       userMove[i] = MoveMessage.charAt(i);
    }
    userMove[4]='\0';
+   Serial.println(userMove);
    Wire.beginTransmission(engineSA);
    Wire.write(userMove,5);
    Wire.endTransmission();
@@ -499,5 +366,179 @@ void selectedPiece(int piece) {
   default:
       Serial.print("ERROR");
       break;
+  }
+}
+
+//Code to Test that Multiplexer and Cap Boards are set up properly
+//Checking the initialization of each capacitive touch sensor 
+void initializeCapTouch() { 
+    Serial.println("\nTCAScanner ready!");
+
+    for (uint8_t t=0; t<8; t++) {
+      tcaselect(t);
+      Serial.print("TCA Port #"); Serial.println(t);
+
+      for (uint8_t addr = 0; addr<=127; addr++) {
+        if (addr == TCAADDR) continue;
+
+        Wire.beginTransmission(addr);
+        if (!Wire.endTransmission()) {
+          Serial.print("Found I2C 0x");  Serial.println(addr,HEX);
+        }
+      }
+    }
+    Serial.println("\ndone");
+
+    tcaselect(0);
+    if (!cap1.begin()) 
+    {
+    Serial.println("CAP1188 not found");
+    while (1);
+    }
+    tcaselect(1);
+    if (!cap2.begin()) 
+    {
+    Serial.println("CAP1188 not found");
+    while (1);
+    }
+    tcaselect(2);
+    if (!cap3.begin()) 
+    {
+    Serial.println("CAP1188 not found");
+    while (1);
+    }
+    tcaselect(3);
+    if (!cap4.begin()) 
+    {
+    Serial.println("CAP1188 not found");
+    while (1);
+    }
+    tcaselect(4);
+    if (!cap5.begin()) 
+    {
+    Serial.println("CAP1188 not found");
+    while (1);
+    }
+    tcaselect(5);
+    if (!cap6.begin()) 
+    {
+    Serial.println("CAP1188 not found");
+    while (1);
+    }
+    tcaselect(6);
+    if (!cap7.begin()) 
+    {
+    Serial.println("CAP1188 not found");
+    while (1);
+    }
+    tcaselect(7);
+    if (!cap8.begin()) 
+    {
+    Serial.println("CAP1188 not found");
+    while (1);
+    }
+    Serial.println("CAP1188 found!");
+}
+
+void checkCapTouch() {
+  tcaselect(0);
+  capTouchInput.touched1 = cap1.touched();
+  
+  tcaselect(1);
+  capTouchInput.touched2 = cap2.touched();
+  
+  tcaselect(2);
+  capTouchInput.touched3 = cap3.touched();
+  
+  tcaselect(3);
+  capTouchInput.touched4 = cap4.touched();
+  
+  tcaselect(4);
+  capTouchInput.touched5 = cap5.touched();
+
+  tcaselect(5);
+  capTouchInput.touched6 = cap6.touched();
+
+  tcaselect(6);
+  capTouchInput.touched7 = cap7.touched();
+
+  tcaselect(7);
+  capTouchInput.touched8 = cap8.touched();
+}
+
+//This block creates an input array from the sensor inputs, and compares the input array to the current boardstate known by the computer. 
+//By comparing these arrays, the computer can identify moves made by the user when there are differences between the arrays.
+void createBoardArray() {
+  for (uint8_t i=0; i<8; i++) 
+  {
+    if (capTouchInput.touched1 & (1 << i)) 
+    {
+      input[i]=1;
+    }
+    else
+    {
+      input[i]=0;
+    }
+    
+    if (capTouchInput.touched2 & (1 << i)) 
+    {
+      input[i+8]=1;
+    }
+    else
+    {
+      input[i+8]=0;
+    }
+    
+    if (capTouchInput.touched3 & (1 << i)) 
+    {
+      input[i+16]=1;
+    }
+    else
+    {
+      input[i+16]=0;
+    }
+    
+    if (capTouchInput.touched4 & (1 << i)) 
+    {
+      input[i+24]=1;
+    }
+    else
+    {
+      input[i+24]=0;
+    }
+    
+    if (capTouchInput.touched5 & (1 << i)) 
+    {
+      input[i+32]=1;
+    }
+    else
+    {
+      input[i+32]=0;
+    }
+    if (capTouchInput.touched6 & (1 << i)) 
+    {
+      input[i+40]=1;
+    }
+    else
+    {
+      input[i+40]=0;
+    }
+    if (capTouchInput.touched7 & (1 << i)) 
+    {
+      input[i+48]=1;
+    }
+    else
+    {
+      input[i+48]=0;
+    }
+    if (capTouchInput.touched8 & (1 << i)) 
+    {
+      input[i+56]=1;
+    }
+    else
+    {
+      input[i+56]=0;
+    }
+    
   }
 }
