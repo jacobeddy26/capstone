@@ -95,6 +95,7 @@ void setup()
 
 void loop() 
 {
+  MoveMessage="";
   //Pulling data from each capacitive touch sensor
   checkCapTouch();
 
@@ -299,16 +300,17 @@ void UpdateBoardPosition(int PieceWasHere, int PieceMovedHere,int AnotherPieceWa
     
     MoveMessage=Encoder[PieceWasHere]+Encoder[PieceMovedHere];
   }
-   Serial.println(MoveMessage);
    char userMove[5];
    for(int i = 0; i < 4; i++) {
       userMove[i] = MoveMessage.charAt(i);
    }
    userMove[4]='\0';
-   Serial.println(userMove);
-   Wire.beginTransmission(engineSA);
-   Wire.write(userMove,5);
-   Wire.endTransmission();
+   if(MoveMessage.compareTo("")!=0) {
+      Serial.println(userMove);
+      Wire.beginTransmission(engineSA);
+      Wire.write(userMove,5);
+      Wire.endTransmission();
+   }
 }
 
 void tcaselect(uint8_t i) 

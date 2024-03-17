@@ -24,11 +24,12 @@ LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);        // Pins to control LCD display
 int adc_key_val[5] ={50, 200, 400, 600, 800 };  // Analog values from keypad
 
 char bestMove[5] = {0}; // Initialize best move globally
+bool moveReceived = false;
 
 void setup(){
-    Wire.begin();
+    Wire.begin(engineSA);
     Wire.onReceive(receiveEvent);
-    Serial.begin(9600);
+    Serial.begin(115200);
     Serial.println("  *** CHESSuino ***");
     
     lcd.clear(); 
@@ -52,7 +53,7 @@ void loop(){
     //UserBestMove();
 
     // Take move from human
-    x1=x2=y1=y2=-1;
+    x1=x2=y1=y2=1;
     takeMove();
     lcd.setCursor(10, 1);
     lcd.print("Think");                       /* Turn for ARDUINO */
@@ -143,6 +144,7 @@ void loop(){
 }
 
 void takeMove(){
+    moveReceived=false;
     int sss=0;
     
     lcd.setCursor(0,1);
@@ -150,8 +152,8 @@ void takeMove(){
     printMN(mn, 1);
 
     printMove();
-    while(Wire.available() != 5);
-    
+    while (moveReceived==false);
+    Serial.println("--------");
     /*for(;;){
       
         int k = waitForKey();
@@ -212,10 +214,10 @@ void takeMove(){
 
 void printMove(){
     lcd.setCursor(4, 1);
-    if(x1>=0) lcd.print((char)(x1+'a')); else lcd.print('_');
-    if(y1>=0) lcd.print((char)(y1+'1')); else lcd.print('_');
-    if(x2>=0) lcd.print((char)(x2+'a')); else lcd.print('_');
-    if(y2>=0) lcd.print((char)(y2+'1')); else lcd.print('_');
+    if(x1>=0) lcd.print(c[0]); else lcd.print('_');
+    if(y1>=0) lcd.print(c[1]); else lcd.print('_');
+    if(x2>=0) lcd.print(c[2]); else lcd.print('_');
+    if(y2>=0) lcd.print(c[3]); else lcd.print('_');
 }
 
 void printMN(int n, int y){
@@ -656,15 +658,14 @@ void UserBestMove() {
 // function that executes whenever data is received from the master
 // this function is registered as an event,  see setup()
 void receiveEvent() {
-   if(Wire.available() == 5) {
-      for (int i = 0; i < 5; i++)
-      {
-         c[i] = Wire.read();
-         Serial.print(c[i]);
-      }
-      c[4] = '\0';
-  } else {
-      // Different data received
-  }
+  //typeid(Wire.peek()).name()=="char"
+  int i = 0;
+   while (Wire.available() && i < 5) {
+      c[i] = Wire.read(); // Read char data
+      i++;
+   }
+   c[4] = '\0'; // Null-terminate the received char array
+   Serial.println(c); // Print received data to serial monitor
+   moveReceived=true;
 }
 
