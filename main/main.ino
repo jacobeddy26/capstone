@@ -24,7 +24,10 @@ LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);        // Pins to control LCD display
 int adc_key_val[5] ={50, 200, 400, 600, 800 };  // Analog values from keypad
 
 char bestMove[5] = {0}; // Initialize best move globally
-bool moveReceived = false;
+char inputMove[5];
+char outputMove[6];
+
+bool isCastle, isCapture;
 
 void setup(){
     Wire.begin(engineSA);
@@ -38,8 +41,6 @@ void setup(){
     lastH[0] = 0;
     characters();
     pinMode(13, OUTPUT);
-
-    //playSerialMode();                  /* Debug mode using Serial Monitor */
 }
 
 void loop(){
@@ -53,7 +54,7 @@ void loop(){
     //UserBestMove();
 
     // Take move from human
-    x1=x2=y1=y2=1;
+    x1=x2=y1=y2=-1;
     takeMove();
     lcd.setCursor(10, 1);
     lcd.print("Think");                       /* Turn for ARDUINO */
@@ -67,6 +68,8 @@ void loop(){
         lcd.setCursor(10, 1);
         lcd.print("Lose "); 
         gameOver();
+    } else {
+      //Serial.println("Move not found!");
     }
     if(k == 0x10){                            /* The flag turn must change to 0x08 */
         lcd.setCursor(10, 1);
@@ -96,9 +99,24 @@ void loop(){
         
         strcpy(lastM, c);                         /* Valid ARDUINO movement */
 
-        Wire.beginTransmission(scaraSA);          // beginTransmission(address)
-        Wire.write(c,5); 
-        Wire.endTransmission();                   // Output Computer's Move as String to I2C
+       outputMove[0]='#';
+       outputMove[1]=c[1];
+       outputMove[2]=c[2];
+       outputMove[3]=c[3];
+       outputMove[4]=c[4];
+       // Throw a flag if the calculated move is a capture or castle
+       if (isCapture) {
+          outputMove[0]='x';
+          Wire.beginTransmission(scaraSA);          // beginTransmission(address)
+          Wire.write(outputMove,6); 
+          Wire.endTransmission();                   // Output Computer's Move as String to I2C    } else if(isCastle) {           
+         // Set flag for castle
+       } else if (isCastle) {
+          outputMove[0]='o';
+          Wire.beginTransmission(scaraSA);          // beginTransmission(address)
+          Wire.write(outputMove,6); 
+          Wire.endTransmission();                   // Output Computer's Move as String to I2C
+       }
 
         delay(1000);        
         return;
@@ -122,10 +140,25 @@ void loop(){
     }
 
     strcpy(lastM, c);                         /* Valid ARDUINO movement */
-
-    Wire.beginTransmission(scaraSA);          // beginTransmission(address)
-    Wire.write(c,5); 
-    Wire.endTransmission();                   // Output Computer's Move as String to I2C
+    
+    outputMove[0]='#';
+    outputMove[1]=c[1];
+    outputMove[2]=c[2];
+    outputMove[3]=c[3];
+    outputMove[4]=c[4];
+    // Throw a flag if the calculated move is a capture or castle
+    if (isCapture) {
+      outputMove[0]='x';
+      Wire.beginTransmission(scaraSA);          // beginTransmission(address)
+      Wire.write(outputMove,6); 
+      Wire.endTransmission();                   // Output Computer's Move as String to I2C    } else if(isCastle) {           
+      // Set flag for castle
+    } else if (isCastle) {
+      outputMove[0]='o';
+      Wire.beginTransmission(scaraSA);          // beginTransmission(address)
+      Wire.write(outputMove,6); 
+      Wire.endTransmission();                   // Output Computer's Move as String to I2C
+    }
 
     strcpy(c, "a1a1");                        /* Execute a invalid move to check score again */
     r = D(-I,I,Q,O,1,3);
@@ -143,81 +176,28 @@ void loop(){
     delay(500);
 }
 
-void takeMove(){
-    moveReceived=false;
-    int sss=0;
-    
-    lcd.setCursor(0,1);
-    lcd.print("                ");
-    printMN(mn, 1);
+void takeMove(){  
+   lcd.setCursor(0,1);
+   lcd.print("                ");
+   printMN(mn, 1);
 
-    printMove();
-    while (moveReceived==false);
-    Serial.println("--------");
-    /*for(;;){
-      
-        int k = waitForKey();
-        delay(200);
-        
-        switch(k){
-            case 0:   // RIGHT
-                if(sss==0 && x1 <7){ x1++;}
-                if(sss==1 && x2 <7){ x2++;}
-            break;
-            
-            case 1:   // UP
-                if(sss==0 && y1 <7){ y1++;}
-                if(sss==1 && y2 <7){ y2++;}
-            break;
-            
-            case 2:   // DOWN
-                if(sss==0 && y1 >0){ y1--;}
-                if(sss==1 && y2 >0){ y2--;}
-            break;
-            
-            case 3:   // LEFT
-                if(sss==0 && x1 >0){ x1--;}
-                if(sss==1 && x2 >0){ x2--;}
-            break;
-            
-            case 4:   // SELECT  think
-                if(sss==1){
-                    if(x2>=0 && y2>=0){
-                        c[0] = x1+'a';
-                        c[1] = y1+'1';
-                        c[2] = x2+'a';
-                        c[3] = y2+'1';
-                        c[4] = 0;
-                        // No tone to validate movement
-                        return;
-                    }else{
-                        // Move invalid
-                    }                        
-                }            
-                if(sss==0){
-                    if(x1>=0 && y1>=0){
-                        sss=1;
-                    }else{
-                        // GO TO BOARD NAVIGATION
-                        boardNavigate();
-                        printLastMovs();
-                        printMN(mn, 1);
-                    }
-                }
-            break;
-        }
-        
-        printMove();
-    }*/
-    printMove();
+   printMove();
+   for(;;){
+      if (inputMove[0] != 'n')
+      {
+         strcpy(c,inputMove);
+         printMove();
+         break;
+      }
+   }
 }
 
 void printMove(){
     lcd.setCursor(4, 1);
-    if(x1>=0) lcd.print(c[0]); else lcd.print('_');
-    if(y1>=0) lcd.print(c[1]); else lcd.print('_');
-    if(x2>=0) lcd.print(c[2]); else lcd.print('_');
-    if(y2>=0) lcd.print(c[3]); else lcd.print('_');
+    if(x1>=0) lcd.print((char)(x1+'a')); else lcd.print('_');
+    if(y1>=0) lcd.print((char)(y1+'1')); else lcd.print('_');
+    if(x2>=0) lcd.print((char)(x2+'a')); else lcd.print('_');
+    if(y2>=0) lcd.print((char)(y2+'1')); else lcd.print('_');
 }
 
 void printMN(int n, int y){
@@ -256,8 +236,8 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
  short m,v,i,P,V,s;
  unsigned char t,p,u,x,y,X,Y,H,B,j,d,h,F,G,C;
  signed char r;
-
- int promotedPiece;
+ isCapture = false;
+ isCastle = false;
 
  if (++Z>30) {                                     /* stack underrun check */
   breakpoint=1;               /* AVR Studio 4 Breakpoint for stack underrun */
@@ -280,11 +260,18 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
   m=-P<l|R>35?d>2?-I:e:-P;                     /* Prune or stand-pat       */
   ++N;                                         /* node count (for timing)  */
   do{
+   if (p == 6 && abs(y - x) == 2) {            // If the moving piece is the king and the move is a two-square move
+       isCastle = true;                        // Set flag for castle
+   }
    u=b[x];                                     /* scan board looking for   */
    if(u&k){                                    /*  own piece (inefficient!)*/
     r=p=u&7;                                   /* p = piece type (set r>0) */
     j=o[p+16];                                 /* first step vector f.piece*/
     W(r=p>2&r<0?-r:-o[++j])                    /* loop over directions o[] */
+    // Check if move is a capture
+    if (i < 0) {                               /* Capture move */
+       isCapture = true;                       /* Set flag for capture */
+    }
     {A:                                        /* resume normal after best */
      y=x;F=G=S;                                /* (x,y)=move, (F,G)=castl.R*/
      do{                                       /* y traverses ray, or:     */
@@ -308,7 +295,7 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
              +(b[x^16]==k+36))                 /* kling to non-virgin King */
              -(R>>2);                          /* end-game Pawn-push bonus */
         V=y+r+1&S?647-p:2*(u&y+16&32);         /* PROMOTION or 6/7th bonus */
-        Wire.beginTransmission(boardSA);       // Transmit piece promoted
+        Wire.beginTransmission(boardSA);       // Transmit piece promoted value
         Wire.write((int)V);               
         Wire.endTransmission();
         b[y]+=V;i+=V;                          /* change piece, add score  */
@@ -655,17 +642,17 @@ void UserBestMove() {
     Serial.println(c);
 }
 
+
 // function that executes whenever data is received from the master
 // this function is registered as an event,  see setup()
 void receiveEvent() {
-  //typeid(Wire.peek()).name()=="char"
-  int i = 0;
+   int i = 0;
    while (Wire.available() && i < 5) {
-      c[i] = Wire.read(); // Read char data
+      inputMove[i] = Wire.read(); // Read char data
       i++;
    }
-   c[4] = '\0'; // Null-terminate the received char array
-   Serial.println(c); // Print received data to serial monitor
-   moveReceived=true;
+   inputMove[4] = '\0'; // Null-terminate the received char array
+   Serial.print("Input Move: ");
+   Serial.println(inputMove); // Print received data to serial monitor
 }
 

@@ -25,7 +25,7 @@ char bestMove[5] = {0}; // Initialize best move globally
 
 void setup(){
     Wire.begin();
-    Serial.begin(9600);
+    Serial.begin(115200);
     Serial.println("  *** CHESSuino ***");
     
     lcd.clear(); 
@@ -63,6 +63,8 @@ void loop(){
         lcd.setCursor(10, 1);
         lcd.print("Lose "); 
         gameOver();
+    } else {
+      Serial.println("Move not found!");
     }
     if(k == 0x10){                            /* The flag turn must change to 0x08 */
         lcd.setCursor(10, 1);

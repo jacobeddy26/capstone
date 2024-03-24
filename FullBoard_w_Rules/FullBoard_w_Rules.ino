@@ -394,52 +394,52 @@ void initializeCapTouch() {
     tcaselect(0);
     if (!cap1.begin()) 
     {
-    Serial.println("CAP1188 not found");
+    Serial.println("CAP1 not found");
     while (1);
     }
     tcaselect(1);
     if (!cap2.begin()) 
     {
-    Serial.println("CAP1188 not found");
+    Serial.println("CAP2 not found");
     while (1);
     }
     tcaselect(2);
     if (!cap3.begin()) 
     {
-    Serial.println("CAP1188 not found");
+    Serial.println("CAP3 not found");
     while (1);
     }
     tcaselect(3);
     if (!cap4.begin()) 
     {
-    Serial.println("CAP1188 not found");
+    Serial.println("CAP4 not found");
     while (1);
     }
     tcaselect(4);
     if (!cap5.begin()) 
     {
-    Serial.println("CAP1188 not found");
+    Serial.println("CAP5 not found");
     while (1);
     }
     tcaselect(5);
     if (!cap6.begin()) 
     {
-    Serial.println("CAP1188 not found");
+    Serial.println("CAP6 not found");
     while (1);
     }
     tcaselect(6);
     if (!cap7.begin()) 
     {
-    Serial.println("CAP1188 not found");
+    Serial.println("CAP7 not found");
     while (1);
     }
     tcaselect(7);
     if (!cap8.begin()) 
     {
-    Serial.println("CAP1188 not found");
+    Serial.println("CAP8 not found");
     while (1);
     }
-    Serial.println("CAP1188 found!");
+    Serial.println("All sensors found!");
 }
 
 void checkCapTouch() {
