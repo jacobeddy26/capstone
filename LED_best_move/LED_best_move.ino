@@ -4,11 +4,32 @@ bool d5dst, d4dst, d3dst, d2dst, d1dst, d0dst;
 
 void setup() {
   Serial.begin(9600);
-  //hardcoded square ID for testing only, this and the function call
-  //together perform the function of the chess engine
-  char best_move[4] = {'g','7','h','7'};
+  //hardcoded square ID for testing only
+  //(this and the function call
+  // together perform the function of the chess engine)
+/*  char best_move[4] = {'g','7','h','7'};
   user_hint(best_move);
+*/
+  //hardcoded dst squares for testing only
+  char possible_move_1[2] = {'a','2'};
+  char possible_move_2[2] = {'a','4'};
+  char possible_move_3[2] = {'b','3'};
+  light_possible_move(possible_move_1);
+  light_possible_move(possible_move_2);
+  light_possible_move(possible_move_3);
+  
   delay(1000);
+}
+
+void light_possible_move(char possible_move[2]) {
+  square_conv_dst(possible_move[0], possible_move[1]);
+  //test segment printing resulting binary to serial monitor
+  Serial.print("Dst: ");
+    Serial.print((int)d5dst); Serial.print((int)d4dst);
+    Serial.print((int)d3dst); Serial.print((int)d2dst);
+    Serial.print((int)d1dst); Serial.print((int)d0dst);
+    Serial.print('\n');
+  delay(1000); //wait a second before showing another possible move
 }
 
 void user_hint(char best_move[4]) {
