@@ -158,7 +158,7 @@ void loop(){
    printLastMovs();
 
    // Calculate and output human's best move
-   //UserBestMove();
+   UserBestMove();
 
    // Take move from human
    x1=x2=y1=y2=-1;
