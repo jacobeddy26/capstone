@@ -23,16 +23,16 @@ void loop()
     Serial.println(inputString);
   }
 
-  char userMove[5];
-   for(int i = 0; i < 4; i++) {
+  char userMove[6];
+   for(int i = 0; i < 5; i++) {
       userMove[i] = inputString.charAt(i);
    }
-   userMove[4]='\0';
+   userMove[5]='\0';
    if(inputString.compareTo("none")!=0) {
       Serial.print("Sending move: ");
       Serial.println(userMove);
       Wire.beginTransmission(engineSA);
-      Wire.write(userMove,5);
+      Wire.write(userMove,6);
       Wire.endTransmission();
    }
 }

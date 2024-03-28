@@ -208,8 +208,8 @@ void setup() {
     initializeChessboard();
     // Test the function
     print_possible_moves(1, 0, KNIGHT, WHITE, true, true);  //Knight at b1
-    print_possible_moves(0, 0, ROOK, WHITE, true, true);  //Rook at a1
-    print_possible_moves(3, 0, QUEEN, WHITE, true, true);  //Queen at d1
+    print_possible_moves(0, 0,ROOK, WHITE, true, true);  //Rook at a1
+    print_possible_moves (3, 0, QUEEN, WHITE, true, true);  //Queen at d1
     print_possible_moves(1, 1, PAWN, WHITE, true, true);  //Pawn at b2
     print_possible_moves(2, 0, BISHOP, WHITE, true, true);  //Bishop at c1
    // a=0,b=1,c=2,d=3,e=4,f=5,g=6,h=7

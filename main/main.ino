@@ -249,7 +249,7 @@ void loop(){
 
    strcpy(lastM, c);                         /* Valid ARDUINO movement */
    
-   outputMove[0]='#';
+   outputMove[0]='?'
    outputMove[1]=c[1];
    outputMove[2]=c[2];
    outputMove[3]=c[3];
