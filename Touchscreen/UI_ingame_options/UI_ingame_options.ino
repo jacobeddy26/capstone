@@ -1,7 +1,7 @@
 /*
    Taylor Cox
    Chess UI: in-game options menu
-   30 Jan - 2 Feb 2024
+   30 Jan - 26 Mar 2024
 */
 
 #include <Elegoo_GFX.h>    // Core graphics library
@@ -65,10 +65,11 @@ Elegoo_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
 //creates in-game options buttons for user
-Elegoo_GFX_Button ingame[2];
-char ingame_labels[2][12] = {"Hints", "Forfeit"};
-uint16_t ingame_colors[2] = {ILI9341_BLACK, ILI9341_BLACK};
+Elegoo_GFX_Button ingame[3];
+char ingame_labels[3][12] = {"Hints", "Moves", "Forfeit"};
+uint16_t ingame_colors[3] = {ILI9341_BLACK, ILI9341_BLACK, ILI9341_BLACK};
 bool hints_on = false; // must be global as other screens may be called in the meantime
+bool possible_moves_on = false;
 bool user_forfeit = false;
 
 Elegoo_GFX_Button yn[2];
@@ -172,7 +173,7 @@ void ingame_menu() {
   #define BUTTON_SPACING_Y 20
   #define BUTTON_TEXTSIZE 2
   
-  for (uint8_t row=0; row<2; row++) {
+  for (uint8_t row=0; row<3; row++) {
    for (uint8_t col=0; col<1; col++) {
      ingame[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
                 BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
@@ -184,6 +185,9 @@ void ingame_menu() {
   
   if(hints_on) // corrects hint button color if returning to menu from another screen
      ingame[0].drawButton(true);  // draw inverted version of button
+
+  if(possible_moves_on)
+     ingame[1].drawButton(true);
 
   while(!user_forfeit) {
 
@@ -206,6 +210,13 @@ void ingame_menu() {
              ingame[0].drawButton(false); // draw regular button
      }
 
+     if(ingame[1].justReleased()) {
+          if(possible_moves_on)
+             ingame[1].drawButton(true);  // draw inverted version of button
+          else
+             ingame[1].drawButton(false); // draw regular button
+     }
+
      if (ingame[0].contains(p.x, p.y)) {
         ingame[0].press(true);  // tell the button it is pressed
         hints_on = !hints_on; // toggle hint variable
@@ -213,7 +224,12 @@ void ingame_menu() {
      }
      else if (ingame[1].contains(p.x, p.y)) {
         ingame[1].press(true);  // tell the button it is pressed
-        ingame[1].drawButton(true);  // draw inverted version of button
+        possible_moves_on = !possible_moves_on; // toggle possible moves variable
+        delay(100);
+     }
+     else if (ingame[2].contains(p.x, p.y)) {
+        ingame[2].press(true);  // tell the button it is pressed
+        ingame[2].drawButton(true);  // draw inverted version of button
         user_forfeit = true;
         delay(100); //time for user to see button invert
         tft.fillScreen(BLACK);
@@ -222,6 +238,7 @@ void ingame_menu() {
      else { // in testing, this seemed necessary for delay in this particular case, idk why
         ingame[0].press(false);
         ingame[1].press(false);
+        ingame[2].press(false);
      }
   }
 }
