@@ -27,8 +27,8 @@ const uint8_t PIECE_HEIGHTS[] = {41, 34, 20, 28, 24, 19};
 // Define move received from I2C
 char receivedMove[6];
 
-// Define individual move components (row, column) i.e. "a2b3" = "a2" & "b3"
-char srcX, srcY, destX, destY;
+// Define source and destination squares from received move i.e. "a2b3" = "a2" & "b3"
+char src[3], dest[3];
 
 // Define the Gripper class
 class Gripper {
@@ -88,76 +88,77 @@ Gripper gripper;
 
 // Define struct scaraAngle
 struct scaraAngle {
-    const char *square;
-    double theta1;
-    double theta2;
+   const char *square;
+   double theta1;
+   double theta2;
 };
 
 // Class to represent a chessboard square
 class ChessboardSquare {
 private:
-    scaraAngle angles;
+   scaraAngle angles;
 
 public:
-    // Constructors
-    ChessboardSquare() : angles({nullptr, 0.0, 0.0}) {}
-    ChessboardSquare(const char *square, double theta1, double theta2) : angles({square, theta1, theta2}) {}
+   // Constructors
+   ChessboardSquare() : angles({nullptr, 0.0, 0.0}) {}
+   ChessboardSquare(const char *square, double theta1, double theta2) : angles({square, theta1, theta2}) {}
 
-    // Getter for theta1
-    double getTheta1() const {
-        return angles.theta1;
-    }
+   // Getter for theta1
+   double getTheta1() const {
+      return angles.theta1;
+   }
 
-    // Getter for theta2
-    double getTheta2() const {
-        return angles.theta2;
-    }
+   // Getter for theta2
+   double getTheta2() const {
+      return angles.theta2;
+   }
 
-    // Getter for square name
-    const char *getName() const {
-        return angles.square;
-    }
+   // Getter for square name
+   const char *getName() const {
+      return angles.square;
+   }
 };
 
 // Class to represent a chessboard with squares
 class Chessboard {
 private:
-    ChessboardSquare squares[8][8];
+   ChessboardSquare squares[8][8];
 
 public:
-    // Constructor
-    Chessboard(const scaraAngle hardcodedAngles[8][8][3]) {
-        // Initialize angles for each square on the chessboard
-        for (uint8_t row = 0; row < 8; ++row) {
-            for (uint8_t col = 0; col < 8; ++col) {
-                squares[row][col] = ChessboardSquare(hardcodedAngles[row][col]->square, hardcodedAngles[row][col]->theta1, hardcodedAngles[row][col]->theta2);
-            }
-        }
-    }
+   // Constructor
+   Chessboard(const scaraAngle hardcodedAngles[8][8][3]) {
+      // Initialize angles for each square on the chessboard
+      for (uint8_t row = 0; row < 8; ++row) {
+         for (uint8_t col = 0; col < 8; ++col) {
+            squares[row][col] = ChessboardSquare(hardcodedAngles[row][col]->square, hardcodedAngles[row][col]->theta1, hardcodedAngles[row][col]->theta2);
+         }
+      }
+   }
 
-    // Getter for accessing a square by its position
-    ChessboardSquare &getSquare(char file, uint8_t rank) {
-        uint8_t col = file - 'a';
-        uint8_t row = 8 - rank;
-        return squares[row][col];
-    }
+   // Getter for accessing a square by its position
+   ChessboardSquare &getSquare(char file, uint8_t rank) {
+      uint8_t col = file - 'a';
+      uint8_t row = 8 - rank;
+      return squares[row][col];
+   }
 };
 
 // Hardcoded names and angle values for each chessboard position
 
 const scaraAngle hardcodedAngles[8][8][3] = {
-    {{"h1", 1.0, 1.0}, {"h2", 1.0, 2.0}, {"h3", 1.0, 3.0}, {"h4", 1.0, 4.0}, {"h5", 1.0, 5.0}, {"h6", 1.0, 6.0}, {"h7", 1.0, 7.0}, {"h8", 1.0, 1.0}},
-    {{"g1", 2.0, 1.0}, {"g2", 2.0, 2.0}, {"g3", 2.0, 3.0}, {"g4", 2.0, 4.0}, {"g5", 2.0, 5.0}, {"g6", 2.0, 6.0}, {"g7", 2.0, 7.0}, {"g8", 2.0, 8.0}},
-    {{"f1", 3.0, 1.0}, {"f2", 3.0, 2.0}, {"f3", 3.0, 3.0}, {"f4", 3.0, 4.0}, {"f5", 3.0, 5.0}, {"f6", 3.0, 6.0}, {"f7", 3.0, 7.0}, {"f8", 3.0, 8.0}},
-    {{"e1", 4.0, 1.0}, {"e2", 4.0, 2.0}, {"e3", 4.0, 3.0}, {"e4", 4.0, 4.0}, {"e5", 4.0, 5.0}, {"e6", 4.0, 6.0}, {"e7", 4.0, 7.0}, {"e8", 4.0, 8.0}},
-    {{"d1", 5.0, 1.0}, {"d2", 5.0, 2.0}, {"d3", 5.0, 3.0}, {"d4", 5.0, 4.0}, {"d5", 5.0, 5.0}, {"d6", 5.0, 6.0}, {"d7", 5.0, 7.0}, {"d8", 5.0, 8.0}},
-    {{"c1", 6.0, 1.0}, {"c2", 6.0, 2.0}, {"c3", 6.0, 3.0}, {"c4", 6.0, 4.0}, {"c5", 6.0, 5.0}, {"c6", 6.0, 6.0}, {"c7", 6.0, 7.0}, {"c8", 6.0, 8.0}},
-    {{"b1", 7.0, 1.0}, {"b2", 7.0, 2.0}, {"b3", 7.0, 3.0}, {"b4", 7.0, 4.0}, {"b5", 7.0, 5.0}, {"b6", 7.0, 6.0}, {"b7", 7.0, 7.0}, {"b8", 7.0, 8.0}},
-    {{"a1", 1.0, 1.0}, {"a2", 8.0, 2.0}, {"a3", 8.0, 3.0}, {"a4", 8.0, 4.0}, {"a5", 8.0, 5.0}, {"a6", 8.0, 6.0}, {"a7", 8.0, 7.0}, {"a8", 8.0, 8.0}}
+   {{"h1", 1.0, 1.0}, {"h2", 1.0, 2.0}, {"h3", 1.0, 3.0}, {"h4", 1.0, 4.0}, {"h5", 1.0, 5.0}, {"h6", 1.0, 6.0}, {"h7", 1.0, 7.0}, {"h8", 1.0, 1.0}},
+   {{"g1", 2.0, 1.0}, {"g2", 2.0, 2.0}, {"g3", 2.0, 3.0}, {"g4", 2.0, 4.0}, {"g5", 2.0, 5.0}, {"g6", 2.0, 6.0}, {"g7", 2.0, 7.0}, {"g8", 2.0, 8.0}},
+   {{"f1", 3.0, 1.0}, {"f2", 3.0, 2.0}, {"f3", 3.0, 3.0}, {"f4", 3.0, 4.0}, {"f5", 3.0, 5.0}, {"f6", 3.0, 6.0}, {"f7", 3.0, 7.0}, {"f8", 3.0, 8.0}},
+   {{"e1", 4.0, 1.0}, {"e2", 4.0, 2.0}, {"e3", 4.0, 3.0}, {"e4", 4.0, 4.0}, {"e5", 4.0, 5.0}, {"e6", 4.0, 6.0}, {"e7", 4.0, 7.0}, {"e8", 4.0, 8.0}},
+   {{"d1", 5.0, 1.0}, {"d2", 5.0, 2.0}, {"d3", 5.0, 3.0}, {"d4", 5.0, 4.0}, {"d5", 5.0, 5.0}, {"d6", 5.0, 6.0}, {"d7", 5.0, 7.0}, {"d8", 5.0, 8.0}},
+   {{"c1", 6.0, 1.0}, {"c2", 6.0, 2.0}, {"c3", 6.0, 3.0}, {"c4", 6.0, 4.0}, {"c5", 6.0, 5.0}, {"c6", 6.0, 6.0}, {"c7", 6.0, 7.0}, {"c8", 6.0, 8.0}},
+   {{"b1", 7.0, 1.0}, {"b2", 7.0, 2.0}, {"b3", 7.0, 3.0}, {"b4", 7.0, 4.0}, {"b5", 7.0, 5.0}, {"b6", 7.0, 6.0}, {"b7", 7.0, 7.0}, {"b8", 7.0, 8.0}},
+   {{"a1", 1.0, 1.0}, {"a2", 8.0, 2.0}, {"a3", 8.0, 3.0}, {"a4", 8.0, 4.0}, {"a5", 8.0, 5.0}, {"a6", 8.0, 6.0}, {"a7", 8.0, 7.0}, {"a8", 8.0, 8.0}}
 };
 
 Chessboard board(hardcodedAngles);
 
+/*
 ChessboardSquare &a1 = board.getSquare('a', 1);ChessboardSquare &a2 = board.getSquare('a', 2); ChessboardSquare &a3 = board.getSquare('a', 3);ChessboardSquare &a4 = board.getSquare('a', 4);
 ChessboardSquare &a5 = board.getSquare('a', 5);ChessboardSquare &a6 = board.getSquare('a', 6);ChessboardSquare &a7 = board.getSquare('a', 7);ChessboardSquare &a8 = board.getSquare('a', 8);
 ChessboardSquare &b1 = board.getSquare('b', 1);ChessboardSquare &b2 = board.getSquare('b', 2);ChessboardSquare &b3 = board.getSquare('b', 3);ChessboardSquare &b4 = board.getSquare('b', 4);
@@ -174,49 +175,65 @@ ChessboardSquare &g1 = board.getSquare('g', 1);ChessboardSquare &g2 = board.getS
 ChessboardSquare &g5 = board.getSquare('g', 5);ChessboardSquare &g6 = board.getSquare('g', 6);ChessboardSquare &g7 = board.getSquare('g', 7);ChessboardSquare &g8 = board.getSquare('g', 8);
 ChessboardSquare &h1 = board.getSquare('h', 1);ChessboardSquare &h2 = board.getSquare('h', 2);ChessboardSquare &h3 = board.getSquare('h', 3);ChessboardSquare &h4 = board.getSquare('h', 4);
 ChessboardSquare &h5 = board.getSquare('h', 5);ChessboardSquare &h6 = board.getSquare('h', 6);ChessboardSquare &h7 = board.getSquare('h', 7);ChessboardSquare &h8 = board.getSquare('h', 8);
+*/
 
 void setup() {
-    Serial.begin(115200);
+   Serial.begin(115200);
 }
 
 void loop() {
-    Serial.print("Square ");
-    Serial.print(a1.getName());
-    Serial.print(": theta1 = ");
-    Serial.print(a1.getTheta1());
-    Serial.print(", theta2 = ");
-    Serial.println(a1.getTheta2());
 
-    delay(2000);
 }
 
 // Function to convert chess notation to source and destination squares
-void parseChessMove(char move[6], char &srcX, char &srcY, char &destX, char &destY) {
-    srcX = move[1];  // Convert column character to index
-    srcY = move[2];  // Convert row character to index
-    destX = move[3]; // Convert column character to index
-    destY = move[4]; // Convert row character to index
+void parseChessMove(char move[6]) {
+   src[0] = move[1];  // Source row i.e. a-h
+   src[1] = move[2];  // Source column i.e. 1-8
+   dest[0] = move[3]; // Destination row
+   dest[1] = move[4]; // Destiantion column
 }
 
 // Function to receive data over I2C
 void receiveEvent() {
-    int i = 0;
-    while (Wire.available() && i < 6) {
-        receivedMove[i] = Wire.read(); // Read char data
-        i++;
-    }
-    receivedMove[5] = '\0'; // Null-terminate the received char array
-    Serial.println(receivedMove); // Print received data to serial monitor
+   int i = 0;
+   while (Wire.available() && i < 6) {
+      receivedMove[i] = Wire.read(); // Read char data
+      i++;
+   }
+   receivedMove[5] = '\0'; // Null-terminate the received char array
+   Serial.println(receivedMove); // Print received data to serial monitor
 
-    if (receivedMove[0] == 'o') {
-        // Castle
-    } else if (receivedMove[0] == 'x') {
-        // Capture
-        //removeCapture()
-    } else {
-        // Normal
-        //parseChessMove(receivedMove);
-        //makeMove();
-    }
+   if (receivedMove[0] == 'o') {
+      // Castle
+   } else if (receivedMove[0] == 'x') {
+      // Capture
+      // parseChessMove()
+      //removeCapture()
+   } else {
+      // Normal
+      parseChessMove(receivedMove);
+      makeMove();
+   }
+}
+
+void makeMove() {
+   char srcX = src[0];
+   int srcY = atoi(&src[1]);
+   char destX = dest[0];
+   int destY = atoi(&dest[1]);
+   ChessboardSquare &src = board.getSquare(srcX,srcY);
+   ChessboardSquare &dest = board.getSquare(destX,destY);
+   Serial.print("Source Square ");
+   Serial.print(src.getName());
+   Serial.print(": theta1 = ");
+   Serial.print(src.getTheta1());
+   Serial.print(", theta2 = ");
+   Serial.println(src.getTheta2());
+   Serial.print("Destination Square ");
+   Serial.print(dest.getName());
+   Serial.print(": theta1 = ");
+   Serial.print(dest.getTheta1());
+   Serial.print(", theta2 = ");
+   Serial.println(dest.getTheta2());
 }
 
