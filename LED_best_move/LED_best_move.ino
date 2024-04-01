@@ -29,6 +29,17 @@ void light_possible_move(char possible_move[2]) {
     Serial.print((int)d3dst); Serial.print((int)d2dst);
     Serial.print((int)d1dst); Serial.print((int)d0dst);
     Serial.print('\n');
+/*
+  //loop to power pins based on binary digits
+  while(1) // while user's turn {
+	if(d5dst) dp5 = HIGH; else dp5 = LOW;
+	if(d4dst) dp4 = HIGH; else dp4 = LOW;
+	if(d3dst) dp3 = HIGH; else dp3 = LOW;
+	if(d2dst) dp2 = HIGH; else dp2 = LOW;
+	if(d1dst) dp1 = HIGH; else dp1 = LOW;
+	if(d0dst) dp0 = HIGH; else dp0 = LOW;
+  }
+*/
   delay(1000); //wait a second before showing another possible move
 }
 
