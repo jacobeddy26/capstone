@@ -162,25 +162,6 @@ const scaraAngle hardcodedAngles[8][8][3] = {
 
 Chessboard board(hardcodedAngles);
 
-/*
-ChessboardSquare &a1 = board.getSquare('a', 1);ChessboardSquare &a2 = board.getSquare('a', 2); ChessboardSquare &a3 = board.getSquare('a', 3);ChessboardSquare &a4 = board.getSquare('a', 4);
-ChessboardSquare &a5 = board.getSquare('a', 5);ChessboardSquare &a6 = board.getSquare('a', 6);ChessboardSquare &a7 = board.getSquare('a', 7);ChessboardSquare &a8 = board.getSquare('a', 8);
-ChessboardSquare &b1 = board.getSquare('b', 1);ChessboardSquare &b2 = board.getSquare('b', 2);ChessboardSquare &b3 = board.getSquare('b', 3);ChessboardSquare &b4 = board.getSquare('b', 4);
-ChessboardSquare &b5 = board.getSquare('b', 5);ChessboardSquare &b6 = board.getSquare('b', 6);ChessboardSquare &b7 = board.getSquare('b', 7);ChessboardSquare &b8 = board.getSquare('b', 8);
-ChessboardSquare &c1 = board.getSquare('c', 1);ChessboardSquare &c2 = board.getSquare('c', 2);ChessboardSquare &c3 = board.getSquare('c', 3);ChessboardSquare &c4 = board.getSquare('c', 4);
-ChessboardSquare &c5 = board.getSquare('c', 5);ChessboardSquare &c6 = board.getSquare('c', 6);ChessboardSquare &c7 = board.getSquare('c', 7);ChessboardSquare &c8 = board.getSquare('c', 8);
-ChessboardSquare &d1 = board.getSquare('d', 1);ChessboardSquare &d2 = board.getSquare('d', 2);ChessboardSquare &d3 = board.getSquare('d', 3);ChessboardSquare &d4 = board.getSquare('d', 4);
-ChessboardSquare &d5 = board.getSquare('d', 5);ChessboardSquare &d6 = board.getSquare('d', 6);ChessboardSquare &d7 = board.getSquare('d', 7);ChessboardSquare &d8 = board.getSquare('d', 8);
-ChessboardSquare &e1 = board.getSquare('e', 1);ChessboardSquare &e2 = board.getSquare('e', 2);ChessboardSquare &e3 = board.getSquare('e', 3);ChessboardSquare &e4 = board.getSquare('e', 4);
-ChessboardSquare &e5 = board.getSquare('e', 5);ChessboardSquare &e6 = board.getSquare('e', 6);ChessboardSquare &e7 = board.getSquare('e', 7);ChessboardSquare &e8 = board.getSquare('e', 8);
-ChessboardSquare &f1 = board.getSquare('f', 1);ChessboardSquare &f2 = board.getSquare('f', 2);ChessboardSquare &f3 = board.getSquare('f', 3);ChessboardSquare &f4 = board.getSquare('f', 4);
-ChessboardSquare &f5 = board.getSquare('f', 5);ChessboardSquare &f6 = board.getSquare('f', 6);ChessboardSquare &f7 = board.getSquare('f', 7);ChessboardSquare &f8 = board.getSquare('f', 8);
-ChessboardSquare &g1 = board.getSquare('g', 1);ChessboardSquare &g2 = board.getSquare('g', 2);ChessboardSquare &g3 = board.getSquare('g', 3);ChessboardSquare &g4 = board.getSquare('g', 4);
-ChessboardSquare &g5 = board.getSquare('g', 5);ChessboardSquare &g6 = board.getSquare('g', 6);ChessboardSquare &g7 = board.getSquare('g', 7);ChessboardSquare &g8 = board.getSquare('g', 8);
-ChessboardSquare &h1 = board.getSquare('h', 1);ChessboardSquare &h2 = board.getSquare('h', 2);ChessboardSquare &h3 = board.getSquare('h', 3);ChessboardSquare &h4 = board.getSquare('h', 4);
-ChessboardSquare &h5 = board.getSquare('h', 5);ChessboardSquare &h6 = board.getSquare('h', 6);ChessboardSquare &h7 = board.getSquare('h', 7);ChessboardSquare &h8 = board.getSquare('h', 8);
-*/
-
 void setup() {
    Serial.begin(115200);
    Wire.begin(scaraSA);
