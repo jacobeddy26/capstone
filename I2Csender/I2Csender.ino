@@ -31,7 +31,7 @@ void loop()
    if(inputString.compareTo("none")!=0) {
       Serial.print("Sending move: ");
       Serial.println(userMove);
-      Wire.beginTransmission(engineSA);
+      Wire.beginTransmission(scaraSA);
       Wire.write(userMove,6);
       Wire.endTransmission();
    }
