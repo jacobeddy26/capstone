@@ -88,6 +88,7 @@ bool hints_on = false; // must be global as other screens may be called in the m
 bool possible_moves_on = false;
 bool user_forfeit = false;
 
+// creates 2 buttons to confirm 
 Elegoo_GFX_Button yn[2];
 char yn_labels[2][12] = {" Confirm    ", "  Back      "};
 uint16_t yn_colors[2] = {ILI9341_BLACK, ILI9341_BLACK};
@@ -147,9 +148,6 @@ Piece chessboard[BOARD_SIZE][BOARD_SIZE];
 #define boardSA 2                                // Slave Address for Board/LCD controller
 #define engineSA 1                               // Slave Address for Chess Engine controller
 
-//LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);        // Pins to control LCD display
-int adc_key_val[5] ={50, 200, 400, 600, 800 };  // Analog values from keypad
-
 char bestMove[5] = {0}; // Initialize best move globally
 char inputMove[5];
 char outputMove[6];
@@ -177,9 +175,7 @@ void setup(){
    //characters();
    pinMode(13, OUTPUT);
 
-   while(!setup_menu());
-   tft.fillScreen(BLACK);
-   setup_board();
+   setup_menu();
 
    Wire.beginTransmission(boardSA);
    Wire.write(k);          // Transmit playing side
@@ -189,10 +185,6 @@ void setup(){
 void loop(){
    ingame_menu();
    int r;
-   //digitalWrite(13, LOW);
-  
-   // Print last movements
-   //printLastMovs();
 
    // Calculate and output human's best move
    UserBestMove();
@@ -200,25 +192,24 @@ void loop(){
    // Take move from human
    x1=x2=y1=y2=-1;
    takeMove();
-   //lcd.setCursor(10, 1);
-   //lcd.print("Think");                       /* Turn for ARDUINO */
+
+   /* Turn for ARDUINO */
     
    K=*c-16*c[1]+799,L=c[2]-16*c[3]+799;      /* parse entered move */
    N=0;
    //T=0x3F;                                   /* T=Computer Play strength */
    bkp();                                    /* Save the board just in case */    
    r = D(-I,I,Q,O,1,3);                      /* Check & do the human movement */
+   Serial.print("Value of r (205): ");
+   Serial.println(r);
    if( !(r>-I+1) ){
-      //lcd.setCursor(10, 1);
-      //lcd.print("Lose "); 
+      // Lose
       gameOver();
    } else {
-      //Serial.println("Move not found!");
+      // Move Not Found!
       illegal_move_alert();
    }
    if(k == 0x10){                            /* The flag turn must change to 0x08 */
-      //lcd.setCursor(10, 1);
-      //lcd.print("     ");
       return;
    }
   
@@ -228,17 +219,13 @@ void loop(){
    mn++;                                     /* Next move */
    searchDataBase();                         /* Search in database */
    if(c[0]){                                 /* Movement found */
-      //lcd.setCursor(10, 1);
-      //lcd.print(c);
-      //lcd.print(" *");
       K=*c-16*c[1]+799,L=c[2]-16*c[3]+799;  /* parse move found */
       N=0;
       //T=0x3F;                               /* T=Computer Play strength */
       r = D(-I,I,Q,O,1,3);                  /* Check & do*/
       if( !(r>-I+1) ) gameOver();
       if(k == 0x08){
-         //lcd.setCursor(10, 1);            
-         //lcd.print("ERR DB");
+         //ERR DB
          gameOver();
       }
         
@@ -275,15 +262,15 @@ void loop(){
    //T=0x3F;                                 /* T=Computer Play strength */
    r = D(-I,I,Q,O,1,3);                      /* Think & do computer's move*/    
 
+   Serial.print("Value of r (267): ");
+   Serial.println(r);
    if( !(r>-I+1) ){
-      //lcd.setCursor(10, 1);
-      //lcd.print("Lose*"); 
+      // Lose*
       gameOver();
    }
     
    if(k == 0x08){                            /* Some times the algorithm do not */
-      //lcd.setCursor(10, 1);                /* execute the move and do not change */
-      //lcd.print("ERR 3 ");              /* the turn flag */
+      // ERR 3                               /* execute the move and do not change the turn flag */
       gameOver();                            /* 1. b1c3  c7c5?       2. f2f4? */
    }
 
@@ -313,31 +300,23 @@ void loop(){
 
    strcpy(c, "a1a1");                        /* Execute a invalid move to check score again */
    r = D(-I,I,Q,O,1,3);
+   Serial.print("Value of r (305): ");
+   Serial.println(r);
    if( !(r>-I+1) ){
-      //lcd.setCursor(10, 1);
-      //lcd.print(lastM);
-      //lcd.print(" ");
       gameOver();
    }
    if(k == 0x08){                            /* Some times the algorithm do not */
-      //lcd.setCursor(10, 1);                 /* execute the move and do not change */
-      //lcd.print("ERR 3 ");                  /* the turn flag */
-      gameOver();                           /* 1. b1c3  c7c5?       2. f2f4? */
+      // ERR 3                               /* execute the move and do not change the turn flag */
+      gameOver();                            /* 1. b1c3  c7c5?       2. f2f4? */
    }    
    delay(500);
 }
 
 void takeMove(){  
-   //lcd.setCursor(0,1);
-   //Serial.println();
-   //printMN(mn, 1);
-
-   //printMove();
    for(;;){
       if (inputMove[0] != 'n')
       {
          strcpy(c,inputMove);
-         //printMove();
          break;
       }
    }
@@ -351,15 +330,6 @@ void printMove(){
    if(y2>=0) lcd.print((char)(y2+'1')); else lcd.print('_');
 }
 */
-void printMN(int n, int y){
-   if(n<=9){
-      //lcd.setCursor(1, y);
-   }else{
-      //lcd.setCursor(0, y);
-   }
-   //lcd.print(n);
-   //lcd.print('.');
-}
 
 /* User interface routines */
 void myputchar(char c) {
@@ -575,30 +545,6 @@ void searchDataBase(){
    }   
 }
 
-// Convert ADC value to key number
-int getKey(){
-   int k;
-   unsigned int input = analogRead(KEYBOARD_INPUT);
-   
-   for (k = 0; k < NUM_KEYS; k++){
-      if (input < adc_key_val[k]){
-         return k;
-      }
-   }
-   
-   if (k >= NUM_KEYS)k = -1;  // No valid key pressed
-   return k;
-}
-
-int waitForKey(){
-   int res;
-   do{
-      seed++;
-      res = getKey();
-   }while(res<0);
-   return res;
-}
-
 void gameOver(){
    //for(;;);
    you_win();
@@ -617,48 +563,6 @@ void rst(){
 
 char board[10][17];
 
-void boardNavigate(){
-   strcpy(board[0], " a b c d e f g h");
-   strcpy(board[9], board[0]);
-    
-   for(int i=0; i<8; i++){
-      strcpy(board[i+1], "                ");
-      for(int j=0; j<8; j++){
-         board[i+1][0]=(char)(8-i+'0');
-         char c = sym[b[16*i+j]&15];
-         board[i+1][j*2+1] = c;
-      }
-   }    
-
-   int ind=0;
-   displayBoard(ind);
-   for(;;){
-      int k = waitForKey();
-      delay(200);
-        
-      switch(k){
-         case 1:   // UP
-            if(ind>0){
-               ind--;
-               displayBoard(ind);
-            }
-            break;
-            
-         case 2:   // DOWN
-            if(ind<8){
-               ind++;
-               displayBoard(ind);
-            }                
-            break;
-            
-         case 4:   // SELECT
-            // After navigating to a square, display possible moves for the piece on that square
-            return;
-            break;
-      }
-   }
-}
-
 void displayBoard(int ind){
    //lcd.clear();
    //lcd.setCursor(0, 0);
@@ -674,20 +578,6 @@ void displayBoard(int ind){
          }
       }
    }  
-}
-
-void printLastMovs(){
-   //lcd.clear();    
-   if(mn > 1){
-      //printMN(mn-1, 0);
-      //lcd.setCursor(4, 0);
-      //lcd.print(lastH);
-      //lcd.setCursor(10, 0);
-      //lcd.print(lastM);
-   }else{
-      //lcd.setCursor(0,0);
-      Serial.println("** CHESSuino **");
-   }
 }
 
 /**
@@ -798,8 +688,8 @@ void UserBestMove() {
    // Output the best move for the user
    Serial.print("Human's best move: ");
    Serial.println(c);
+   strcpy(bestMove,c);
 }
-
 
 // function that executes whenever data is received from the master
 // this function is registered as an event,  see setup()
@@ -830,7 +720,7 @@ void status_coord(int x, int y, const __FlashStringHelper *msg) {
    tft.print(msg);
 }
 
-boolean setup_menu() {
+void setup_menu() {
 
    status(F("Select side:"));
 
@@ -871,10 +761,166 @@ boolean setup_menu() {
    confirm.drawButton();
    bool confirmed = false;
 
-   int chosen_side = 0;
-   int chosen_diff = 0;
+   int chosen_side = -1;
+   int chosen_diff = -1;
 
-   while(!confirmed |(chosen_side==3 | chosen_diff==3)) { 
+   while(!confirmed |(chosen_side==-1 | chosen_diff==-1)) { 
+      digitalWrite(13, HIGH);
+      TSPoint p = ts.getPoint();
+      digitalWrite(13, LOW);
+  
+      pinMode(XM, OUTPUT);
+      pinMode(YP, OUTPUT);
+  
+      if (p.z > MINPRESSURE && p.z < MAXPRESSURE && chosen_side == 1) {
+         p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+      }
+
+      if (p.z > MINPRESSURE && p.z < MAXPRESSURE && chosen_side == 2) {
+         p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+      }
+
+      if (side_choice[0].contains(p.x, p.y)) {
+         chosen_side = 1; // white
+         k=16;
+
+         tft.fillScreen(BLACK);
+         tft.setRotation(2);
+
+         status(F("Select side:"));
+
+         for (uint8_t row=0; row<2; row++) {
+            for (uint8_t col=0; col<1; col++) {
+               side_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+                     BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
+                     BUTTON_W, BUTTON_H, ILI9341_WHITE, sidecolors[col + row], ILI9341_WHITE,
+                     sidelabels[col + row], BUTTON_TEXTSIZE); 
+               side_choice[col + row].drawButton();
+            }
+         }
+
+         status_coord(10, 120, F("Select difficulty:"));
+
+         for (uint8_t row=0; row<3; row++) {
+            for (uint8_t col=0; col<1; col++) {
+               diff_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+                     160+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
+                     BUTTON_W, BUTTON_H, ILI9341_WHITE,  diffcolors[col + row], ILI9341_WHITE,
+                     difflabels[col + row], BUTTON_TEXTSIZE); 
+               diff_choice[col + row].drawButton();
+            }
+         }
+
+         confirm.initButton(&tft, BUTTON_X, 300, BUTTON_W, BUTTON_H,
+                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", 2); 
+                  // x, y, w, h, outline, fill, text
+         confirm.drawButton();
+
+         side_choice[0].drawButton(true);  // draw inverted version of button
+         side_choice[1].drawButton(false); // make sure other button reverts to original color
+      } else if (side_choice[1].contains(p.x, p.y)) {
+         chosen_side = 2; // black
+         k^=24;
+
+         tft.fillScreen(BLACK);
+         tft.setRotation(0);
+
+         (F("Select side:"));
+
+         for (uint8_t row=0; row<2; row++) {
+            for (uint8_t col=0; col<1; col++) {
+               side_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+                     BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
+                     BUTTON_W, BUTTON_H, ILI9341_WHITE, sidecolors[col + row], ILI9341_WHITE,
+                     sidelabels[col + row], BUTTON_TEXTSIZE); 
+               side_choice[col + row].drawButton();
+            }
+         }
+
+         status_coord(10, 120, F("Select difficulty:"));
+
+         for (uint8_t row=0; row<3; row++) {
+            for (uint8_t col=0; col<1; col++) {
+               diff_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+                     160+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
+                     BUTTON_W, BUTTON_H, ILI9341_WHITE,  diffcolors[col + row], ILI9341_WHITE,
+                     difflabels[col + row], BUTTON_TEXTSIZE); 
+               diff_choice[col + row].drawButton();
+            }
+         }
+
+         confirm.initButton(&tft, BUTTON_X, 300, BUTTON_W, BUTTON_H,
+                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", 2); 
+                  // x, y, w, h, outline, fill, text
+         confirm.drawButton();
+
+         side_choice[1].drawButton(true);  // draw inverted version of button
+         side_choice[0].drawButton(false); // make sure other button reverts to original color
+      }
+
+      if (diff_choice[0].contains(p.x, p.y)) {
+         chosen_diff = 1;
+         T = 0x01;  // easy
+         diff_choice[0].drawButton(true);  // draw inverted version of button
+         diff_choice[1].drawButton(false); // make sure other buttons revert to original color
+         diff_choice[2].drawButton(false);
+      } else if (diff_choice[1].contains(p.x, p.y)) {
+         chosen_diff = 2;
+         T = 0x20; // medium
+         diff_choice[1].drawButton(true);  // draw inverted version of button
+         diff_choice[0].drawButton(false); // make sure other buttons revert to original color
+         diff_choice[2].drawButton(false);
+      } else if (diff_choice[2].contains(p.x, p.y)) {
+         chosen_diff = 3;
+         T = 0x3F; // hard
+         diff_choice[2].drawButton(true);  // draw inverted version of button
+         diff_choice[0].drawButton(false); // make sure other buttons revert to original color
+         diff_choice[1].drawButton(false);
+      }
+      /*
+      Serial.print("chosen_side : ");
+      Serial.println(chosen_side);
+      Serial.print("chosen_diff : ");
+      Serial.println(chosen_diff);
+      Serial.print("(p.x, p.y) : (");
+      Serial.print(p.x); Serial.print(", ");
+      Serial.print(p.y); Serial.println(")");
+      */
+      if((chosen_side!=-1) && (chosen_diff!=-1) && confirm.contains(p.x, p.y)) {
+         confirmed = true;
+         confirm.drawButton(true);  // draw inverted version of buttons
+      }
+   }
+   Serial.print("Selected Options: k = ");
+   Serial.print(k);
+   Serial.print(", T = ");
+   Serial.println(T);
+   tft.fillScreen(BLACK);
+   setup_board();
+}
+
+void setup_board() {
+  
+   status(F("Please confirm the  board has been set  up according to the manual."));
+  
+   // button dimensions (makes it easier to read/edit where they're drawn below)
+   #define BUTTON_X 120
+   #define BUTTON_Y 50
+   #define BUTTON_W 80
+   #define BUTTON_H 30
+   #define BUTTON_SPACING_X 10
+   #define BUTTON_SPACING_Y 10
+   #define BUTTON_TEXTSIZE 2
+
+   confirm.initButton(&tft, BUTTON_X, 200, BUTTON_W, BUTTON_H,
+                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", 2); 
+                  // x, y, w, h, outline, fill, text
+   confirm.drawButton();
+   bool confirmed = false;
+
+   while(!confirmed) {
       digitalWrite(13, HIGH);
       TSPoint p = ts.getPoint();
       digitalWrite(13, LOW);
@@ -887,86 +933,13 @@ boolean setup_menu() {
          p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
       }
 
-      if (side_choice[0].contains(p.x, p.y)) {
-         chosen_side = 1; // white
-         //k=16;
-         side_choice[0].drawButton(true);  // draw inverted version of button
-         side_choice[1].drawButton(false); // make sure other button reverts to original color
-      } else if (side_choice[1].contains(p.x, p.y)) {
-         chosen_side = 2; // black
-         //k^=24;
-         //tft.setRotation(2);
-         side_choice[1].drawButton(true);  // draw inverted version of button
-         side_choice[0].drawButton(false); // make sure other button reverts to original color
-      }
-
-      if (diff_choice[0].contains(p.x, p.y)) {
-         T = 0x01;  // easy
-         diff_choice[0].drawButton(true);  // draw inverted version of button
-         diff_choice[1].drawButton(false); // make sure other buttons revert to original color
-         diff_choice[2].drawButton(false);
-      } else if (diff_choice[1].contains(p.x, p.y)) {
-         T = 0x20; // medium
-         diff_choice[1].drawButton(true);  // draw inverted version of button
-         diff_choice[0].drawButton(false); // make sure other buttons revert to original color
-         diff_choice[2].drawButton(false);
-      } else if (diff_choice[2].contains(p.x, p.y)) {
-         T = 0x3F; // hard
-         diff_choice[2].drawButton(true);  // draw inverted version of button
-         diff_choice[0].drawButton(false); // make sure other buttons revert to original color
-         diff_choice[1].drawButton(false);
-      }
-
-      if(chosen_side>0 && chosen_diff>0 && confirm.contains(p.x, p.y)) {
+      if(confirm.contains(p.x, p.y)) {
          confirmed = true;
          confirm.drawButton(true);  // draw inverted version of buttons
-         return confirmed;
       }
    }
-}
-
-boolean setup_board() {
-  
-  status(F("Please confirm the  board has been set  up according to the manual."));
-  
-  // button dimensions (makes it easier to read/edit where they're drawn below)
-  #define BUTTON_X 120
-  #define BUTTON_Y 50
-  #define BUTTON_W 80
-  #define BUTTON_H 30
-  #define BUTTON_SPACING_X 10
-  #define BUTTON_SPACING_Y 10
-  #define BUTTON_TEXTSIZE 2
-
-  confirm.initButton(&tft, BUTTON_X, 200, BUTTON_W, BUTTON_H,
-                 ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", 2); 
-                     // x, y, w, h, outline, fill, text
-  confirm.drawButton();
-  bool confirmed = false;
-
-  while(!confirmed) {
-    
-     digitalWrite(13, HIGH);
-     TSPoint p = ts.getPoint();
-     digitalWrite(13, LOW);
-  
-     pinMode(XM, OUTPUT);
-     pinMode(YP, OUTPUT);
-  
-     if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
-       p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-       p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
-     }
-
-     if(confirm.contains(p.x, p.y)) {
-         confirmed = true;
-         confirm.drawButton(true);  // draw inverted version of buttons
-     }
-  }
-
   tft.fillScreen(BLACK);
-  // call to start game here
-  return true;
+  // Start game here
 }
 
 void user_promo() {
@@ -1206,7 +1179,7 @@ void ingame_menu() {
       ingame[1].drawButton(true);
    }
 
-   while(!user_forfeit) {
+   if(!user_forfeit) {
 
       digitalWrite(13, HIGH);
       TSPoint p = ts.getPoint();

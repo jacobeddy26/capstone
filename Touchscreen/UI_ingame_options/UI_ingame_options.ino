@@ -190,7 +190,6 @@ void ingame_menu() {
      ingame[1].drawButton(true);
 
   while(!user_forfeit) {
-
      digitalWrite(13, HIGH);
      TSPoint p = ts.getPoint();
      digitalWrite(13, LOW);
