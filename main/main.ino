@@ -159,9 +159,6 @@ void setup(){
    Wire.onReceive(receiveEvent);
    Serial.begin(115200);
    Serial.println("  *** CHESSuino ***");
-    
-   //lcd.clear(); 
-   //lcd.begin(16, 2);  
 
    tft.reset();
    uint16_t identifier = tft.readID();
@@ -172,7 +169,6 @@ void setup(){
    tft.fillScreen(BLACK);
  
    lastH[0] = 0;
-   //characters();
    pinMode(13, OUTPUT);
 
    setup_menu();
@@ -321,15 +317,6 @@ void takeMove(){
       }
    }
 }
-/*
-void printMove(){
-   lcd.setCursor(4, 1);
-   if(x1>=0) lcd.print((char)(x1+'a')); else lcd.print('_');
-   if(y1>=0) lcd.print((char)(y1+'1')); else lcd.print('_');
-   if(x2>=0) lcd.print((char)(x2+'a')); else lcd.print('_');
-   if(y2>=0) lcd.print((char)(y2+'1')); else lcd.print('_');
-}
-*/
 
 /* User interface routines */
 void myputchar(char c) {
@@ -563,13 +550,7 @@ void rst(){
 
 char board[10][17];
 
-void displayBoard(int ind){
-   //lcd.clear();
-   //lcd.setCursor(0, 0);
-   //lcd.print(board[ind+0]);
-   //lcd.setCursor(0, 1);
-   //lcd.print(board[ind+1]);
-    
+void displayBoard(int ind){ 
    // Put the pieces
    for(int y=0; y<2; y++){
       if(ind+y != 0 && ind+y != 9){
@@ -578,22 +559,6 @@ void displayBoard(int ind){
          }
       }
    }  
-}
-
-/**
-  0=square
-  1=pawnB
-  2=pawnW
-  3=queen  B&W  
-  4=king   B&W
-  5=bishop B&W
-  6=knight B&W
-  7=rock   B&W
-*/
-void characters(){
-   //lcd.createChar(0, esq);
-   //lcd.createChar(1, pawnB);
-   //lcd.createChar(2, pawnW);
 }
 
 void putPiece(int x, int y, char piece){
@@ -609,52 +574,42 @@ void putPiece(int x, int y, char piece){
          break;
         
       case 'r':
-         //lcd.createChar(7, rockB);
          ind=7;
          break;
         
       case 'R':
-         //lcd.createChar(7, rockW);
          ind=7;
          break;
         
       case 'k':
-         //lcd.createChar(4, kingB);
          ind=4;
          break;
         
       case 'K':
-         //lcd.createChar(4, kingW);
          ind=4;
          break;
         
       case 'b':
-         //lcd.createChar(5, bishopB);
          ind=5;
          break;
         
       case 'B':
-         //lcd.createChar(5, bishopW);
          ind=5;
          break;
         
       case 'q':
-         //lcd.createChar(3, queenB);
          ind=3;
          break;
         
       case 'Q':
-         //lcd.createChar(3, queenW);
          ind=3;
          break;
         
       case 'n':
-         //lcd.createChar(6, knightB);
          ind=6;
          break;
         
       case 'N':
-         //lcd.createChar(6, knightW);
          ind=6;
          break;
         
@@ -667,10 +622,7 @@ void putPiece(int x, int y, char piece){
          break;
         
       default:;
-         //lcd.print('x');
    }
-   //lcd.setCursor(x, y);
-   //lcd.write(ind);
 }
 
 void UserBestMove() {
