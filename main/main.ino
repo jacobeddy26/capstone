@@ -107,6 +107,35 @@ bool promo_done = false;
 bool cpu_promo_done = false;
 bool confirmed = false;
 
+//global variables that hold binary digits for source and destination squares
+bool d5src, d4src, d3src, d2src, d1src, d0src;
+bool d5dst, d4dst, d3dst, d2dst, d1dst, d0dst;
+
+// Define chessboard dimensions
+const int BOARD_SIZE = 8;
+
+// Define piece constants
+#define EMPTY 0
+#define PAWN 1
+#define KNIGHT 2
+#define BISHOP 3
+#define ROOK 4
+#define QUEEN 5
+#define KING 6
+
+// Define piece colors
+#define WHITE 0
+#define BLACK 1
+
+// Define piece structures
+struct Piece {
+   int type;
+   int color;
+};
+
+// Define chessboard
+Piece chessboard[BOARD_SIZE][BOARD_SIZE];
+
 #define pawn 1
 #define knight 2
 #define bishop 3
@@ -787,10 +816,10 @@ void receiveEvent() {
 
 // prints line of text
 void status(const __FlashStringHelper *msg) {
-  tft.setCursor(10, 10);
-  tft.setTextColor(ILI9341_WHITE);
-  tft.setTextSize(2);
-  tft.print(msg);
+   tft.setCursor(10, 10);
+   tft.setTextColor(ILI9341_WHITE);
+   tft.setTextSize(2);
+   tft.print(msg);
 }
 
 // prints line of text
@@ -803,49 +832,49 @@ void status_coord(int x, int y, const __FlashStringHelper *msg) {
 
 boolean setup_menu() {
 
-  status(F("Select side:"));
+   status(F("Select side:"));
 
-  // button dimensions (makes it easier to read/edit where they're drawn below)
-  #define BUTTON_X 120
-  #define BUTTON_Y 50
-  #define BUTTON_W 80
-  #define BUTTON_H 30
-  #define BUTTON_SPACING_X 10
-  #define BUTTON_SPACING_Y 10
-  #define BUTTON_TEXTSIZE 2
+   // button dimensions (makes it easier to read/edit where they're drawn below)
+   #define BUTTON_X 120
+   #define BUTTON_Y 50
+   #define BUTTON_W 80
+   #define BUTTON_H 30
+   #define BUTTON_SPACING_X 10
+   #define BUTTON_SPACING_Y 10
+   #define BUTTON_TEXTSIZE 2
 
-  for (uint8_t row=0; row<2; row++) {
-   for (uint8_t col=0; col<1; col++) {
-     side_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
-                BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
-                BUTTON_W, BUTTON_H, ILI9341_WHITE, sidecolors[col + row], ILI9341_WHITE,
-                sidelabels[col + row], BUTTON_TEXTSIZE); 
-     side_choice[col + row].drawButton();
+   for (uint8_t row=0; row<2; row++) {
+      for (uint8_t col=0; col<1; col++) {
+         side_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+               BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
+               BUTTON_W, BUTTON_H, ILI9341_WHITE, sidecolors[col + row], ILI9341_WHITE,
+               sidelabels[col + row], BUTTON_TEXTSIZE); 
+         side_choice[col + row].drawButton();
+      }
    }
-  }
 
-  status_coord(10, 120, F("Select difficulty:"));
+   status_coord(10, 120, F("Select difficulty:"));
 
-  for (uint8_t row=0; row<3; row++) {
-   for (uint8_t col=0; col<1; col++) {
-     diff_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
-                160+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
-                BUTTON_W, BUTTON_H, ILI9341_WHITE,  diffcolors[col + row], ILI9341_WHITE,
-                 difflabels[col + row], BUTTON_TEXTSIZE); 
-     diff_choice[col + row].drawButton();
+   for (uint8_t row=0; row<3; row++) {
+      for (uint8_t col=0; col<1; col++) {
+         diff_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+               160+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
+               BUTTON_W, BUTTON_H, ILI9341_WHITE,  diffcolors[col + row], ILI9341_WHITE,
+               difflabels[col + row], BUTTON_TEXTSIZE); 
+         diff_choice[col + row].drawButton();
+      }
    }
-  }
 
-  confirm.initButton(&tft, BUTTON_X, 300, BUTTON_W, BUTTON_H,
-                 ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", 2); 
-                     // x, y, w, h, outline, fill, text
-  confirm.drawButton();
-  bool confirmed = false;
+   confirm.initButton(&tft, BUTTON_X, 300, BUTTON_W, BUTTON_H,
+                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", 2); 
+                  // x, y, w, h, outline, fill, text
+   confirm.drawButton();
+   bool confirmed = false;
 
-  int chosen_side = 0;
-  int chosen_diff = 0;
+   int chosen_side = 0;
+   int chosen_diff = 0;
 
-  while(!confirmed |(chosen_side==3 | chosen_diff==3)) { 
+   while(!confirmed |(chosen_side==3 | chosen_diff==3)) { 
       digitalWrite(13, HIGH);
       TSPoint p = ts.getPoint();
       digitalWrite(13, LOW);
@@ -1053,181 +1082,182 @@ void cpu_promo(int cpu_promo_to) {
 
 void illegal_move_alert() {
 
-  tft.fillScreen(0xC800); // dark red
-  status(F("You can't make that move. Please reset the board to its    previous state and  then confirm."));
+   tft.fillScreen(0xC800); // dark red
+   status(F("You can't make that move. Please reset the board to its    previous state and  then confirm."));
 
-  // button dimensions (makes it easier to read/edit where they're drawn below)
-  #define BUTTON_X 120
-  #define BUTTON_Y 200
-  #define BUTTON_W 100
-  #define BUTTON_H 30
+   // button dimensions (makes it easier to read/edit where they're drawn below)
+   #define BUTTON_X 120
+   #define BUTTON_Y 200
+   #define BUTTON_W 100
+   #define BUTTON_H 30
 
-  confirm.initButton(&tft, BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H,
-                 ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", 2); 
-                     // x, y, w, h, outline, fill, text
-  confirm.drawButton();
+   confirm.initButton(&tft, BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H,
+                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", 2); 
+                  // x, y, w, h, outline, fill, text
+   confirm.drawButton();
 
-  while(!confirmed) {
+   while(!confirmed) {
 
-     digitalWrite(13, HIGH);
-     TSPoint p = ts.getPoint();
-     digitalWrite(13, LOW);
+      digitalWrite(13, HIGH);
+      TSPoint p = ts.getPoint();
+      digitalWrite(13, LOW);
   
-     pinMode(XM, OUTPUT);
-     pinMode(YP, OUTPUT);
+      pinMode(XM, OUTPUT);
+      pinMode(YP, OUTPUT);
   
-     if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
-       p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-       p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
-     }
+      if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+         p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+      }
 
-     if(confirm.contains(p.x, p.y)) {
+      if(confirm.contains(p.x, p.y)) {
          confirmed = true;
          confirm.drawButton(true); // invert button color
          tft.fillScreen(BLACK);
-     }
-  }
+      }
+   }
 }
 
 void forfeit_confirm() {
-  bool decided = false;
+   bool decided = false;
   
-  tft.fillScreen(0x03AB);
-  status(F("Are you sure you   want to forfeit the game?"));
+   tft.fillScreen(0x03AB);
+   status(F("Are you sure you   want to forfeit the game?"));
 
-  // button dimensions (makes it easier to read/edit where they're drawn below)
-  #define BUTTON_X 120
-  #define BUTTON_Y 100
-  #define BUTTON_W 100
-  #define BUTTON_H 30
-  #define BUTTON_SPACING_X 20
-  #define BUTTON_SPACING_Y 20
-  #define BUTTON_TEXTSIZE 2
+   // button dimensions (makes it easier to read/edit where they're drawn below)
+   #define BUTTON_X 120
+   #define BUTTON_Y 100
+   #define BUTTON_W 100
+   #define BUTTON_H 30
+   #define BUTTON_SPACING_X 20
+   #define BUTTON_SPACING_Y 20
+   #define BUTTON_TEXTSIZE 2
 
-  for (uint8_t row=0; row<2; row++) {
-  for (uint8_t col=0; col<1; col++) {
-    yn[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+   for (uint8_t row=0; row<2; row++) {
+      for (uint8_t col=0; col<1; col++) {
+         yn[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
               BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
               BUTTON_W, BUTTON_H, ILI9341_WHITE, yn_colors[col + row], ILI9341_WHITE,
               yn_labels[col + row], BUTTON_TEXTSIZE); 
-    yn[col + row].drawButton();
-    }
-  }
+         yn[col + row].drawButton();
+      }
+   }
 
-  while(!decided) {
+   while(!decided) {
 
-     digitalWrite(13, HIGH);
-     TSPoint p = ts.getPoint();
-     digitalWrite(13, LOW);
+      digitalWrite(13, HIGH);
+      TSPoint p = ts.getPoint();
+      digitalWrite(13, LOW);
   
-     pinMode(XM, OUTPUT);
-     pinMode(YP, OUTPUT);
+      pinMode(XM, OUTPUT);
+      pinMode(YP, OUTPUT);
 
-    if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
-      p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-      p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
-    }
+      if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+         p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+      }
 
-    if (yn[0].contains(p.x, p.y)) { // forfeit confirmed
-      yn[0].drawButton(true); // invert button colors
-      decided = true;
-      tft.fillScreen(BLACK);
-      // call game over screen
-      game_over();
-    }
-    if (yn[1].contains(p.x, p.y)) { // forfeit denied
-      yn[1].drawButton(true); // invert button colors
-      decided = true;
-      tft.fillScreen(BLACK);
-      user_forfeit = false;
-      loop();
-    }
-  }
+      if (yn[0].contains(p.x, p.y)) { // forfeit confirmed
+         yn[0].drawButton(true); // invert button colors
+         decided = true;
+         tft.fillScreen(BLACK);
+         // call game over screen
+         game_over();
+      }
+      if (yn[1].contains(p.x, p.y)) { // forfeit denied
+         yn[1].drawButton(true); // invert button colors
+         decided = true;
+         tft.fillScreen(BLACK);
+         user_forfeit = false;
+         loop();
+      }
+   }
   
 }
 
 void ingame_menu() {
   
-  tft.fillScreen(ILI9341_DARKGREEN);
-  status(F("Game options"));
+   tft.fillScreen(ILI9341_DARKGREEN);
+   status(F("Game options"));
 
-  // button dimensions (makes it easier to read/edit where they're drawn below)
-  #define BUTTON_X 120
-  #define BUTTON_Y 100
-  #define BUTTON_W 100
-  #define BUTTON_H 30
-  #define BUTTON_SPACING_X 20
-  #define BUTTON_SPACING_Y 20
-  #define BUTTON_TEXTSIZE 2
+   // button dimensions (makes it easier to read/edit where they're drawn below)
+   #define BUTTON_X 120
+   #define BUTTON_Y 100
+   #define BUTTON_W 100
+   #define BUTTON_H 30
+   #define BUTTON_SPACING_X 20
+   #define BUTTON_SPACING_Y 20
+   #define BUTTON_TEXTSIZE 2
   
   for (uint8_t row=0; row<3; row++) {
-   for (uint8_t col=0; col<1; col++) {
-     ingame[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
-                BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
-                BUTTON_W, BUTTON_H, ILI9341_WHITE, ingame_colors[col + row], ILI9341_WHITE,
-                ingame_labels[col + row], BUTTON_TEXTSIZE); 
-     ingame[col + row].drawButton();
+      for (uint8_t col=0; col<1; col++) {
+         ingame[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+               BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
+               BUTTON_W, BUTTON_H, ILI9341_WHITE, ingame_colors[col + row], ILI9341_WHITE,
+               ingame_labels[col + row], BUTTON_TEXTSIZE); 
+         ingame[col + row].drawButton();
+      }
    }
-  }
   
-  if(hints_on) // corrects hint button color if returning to menu from another screen
-     ingame[0].drawButton(true);  // draw inverted version of button
+   if(hints_on) { // corrects hint button color if returning to menu from another screen
+      ingame[0].drawButton(true);  // draw inverted version of button
+   }
+   if(possible_moves_on) {
+      ingame[1].drawButton(true);
+   }
 
-  if(possible_moves_on)
-     ingame[1].drawButton(true);
+   while(!user_forfeit) {
 
-  while(!user_forfeit) {
-
-     digitalWrite(13, HIGH);
-     TSPoint p = ts.getPoint();
-     digitalWrite(13, LOW);
+      digitalWrite(13, HIGH);
+      TSPoint p = ts.getPoint();
+      digitalWrite(13, LOW);
   
-     pinMode(XM, OUTPUT);
-     pinMode(YP, OUTPUT);
+      pinMode(XM, OUTPUT);
+      pinMode(YP, OUTPUT);
   
-     if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
-       p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-       p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
-     }
+      if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+         p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+      }
      
-     if(ingame[0].justReleased()) { // makes it only redraw if button was just released (will flash otherwise)
-          if(hints_on)
-             ingame[0].drawButton(true);  // draw inverted version of button
-          else
-             ingame[0].drawButton(false); // draw regular button
-     }
+      if(ingame[0].justReleased()) { // makes it only redraw if button was just released (will flash otherwise)
+         if(hints_on)
+            ingame[0].drawButton(true);  // draw inverted version of button
+         else
+            ingame[0].drawButton(false); // draw regular button
+      }
 
-     if(ingame[1].justReleased()) {
-          if(possible_moves_on)
-             ingame[1].drawButton(true);  // draw inverted version of button
-          else
-             ingame[1].drawButton(false); // draw regular button
-     }
+      if(ingame[1].justReleased()) {
+         if(possible_moves_on) {
+            ingame[1].drawButton(true);  // draw inverted version of button
+            //print_possible_moves(1, 0, KNIGHT, WHITE, true, true);  //Knight at b1
+         } else {
+            ingame[1].drawButton(false); // draw regular button
+         }
+      }   
 
-     if (ingame[0].contains(p.x, p.y)) {
-        ingame[0].press(true);  // tell the button it is pressed
-        hints_on = !hints_on; // toggle hint variable
-        delay(100);
-     }
-     else if (ingame[1].contains(p.x, p.y)) {
-        ingame[1].press(true);  // tell the button it is pressed
-        possible_moves_on = !possible_moves_on; // toggle possible moves variable
-        delay(100);
-     }
-     else if (ingame[2].contains(p.x, p.y)) {
-        ingame[2].press(true);  // tell the button it is pressed
-        ingame[2].drawButton(true);  // draw inverted version of button
-        user_forfeit = true;
-        delay(100); //time for user to see button invert
-        tft.fillScreen(BLACK);
-        forfeit_confirm();
-     }
-     else { // in testing, this seemed necessary for delay in this particular case, idk why
-        ingame[0].press(false);
-        ingame[1].press(false);
-        ingame[2].press(false);
-     }
-  }
+      if (ingame[0].contains(p.x, p.y)) {
+         ingame[0].press(true);  // tell the button it is pressed
+         hints_on = !hints_on; // toggle hint variable
+         user_hint(bestMove);
+         delay(100);
+      } else if (ingame[1].contains(p.x, p.y)) {
+         ingame[1].press(true);  // tell the button it is pressed
+         possible_moves_on = !possible_moves_on; // toggle possible moves variable
+         delay(100);
+      } else if (ingame[2].contains(p.x, p.y)) {
+         ingame[2].press(true);  // tell the button it is pressed
+         ingame[2].drawButton(true);  // draw inverted version of button
+         user_forfeit = true;
+         delay(100); //time for user to see button invert
+         tft.fillScreen(BLACK);
+         forfeit_confirm();
+      } else { // in testing, this seemed necessary for delay in this particular case, idk why
+         ingame[0].press(false);
+         ingame[1].press(false);
+         ingame[2].press(false);
+      }
+   }
 }
 
 void you_win() {
@@ -1247,106 +1277,403 @@ void you_win() {
                      // x, y, w, h, outline, fill, text
   cont.drawButton();
 
-  while(!continued) {
+   while(!continued) {
 
-     digitalWrite(13, HIGH);
-     TSPoint p = ts.getPoint();
-     digitalWrite(13, LOW);
+      digitalWrite(13, HIGH);
+      TSPoint p = ts.getPoint();
+      digitalWrite(13, LOW);
   
-     pinMode(XM, OUTPUT);
-     pinMode(YP, OUTPUT);
+      pinMode(XM, OUTPUT);
+      pinMode(YP, OUTPUT);
      
-     if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
-       p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-       p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
-     }
+      if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+         p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+      }
 
-     if(cont.contains(p.x, p.y)) {
-       cont.drawButton(true);
-       continued = true;
-       tft.fillScreen(BLACK);
-     }
-  }
-
-  game_over();
+      if(cont.contains(p.x, p.y)) {
+         cont.drawButton(true);
+         continued = true;
+         tft.fillScreen(BLACK);
+      }
+   }
+   game_over();
 }
 
 void you_lose() {
 
-  bool continued = false;
+   bool continued = false;
 
-  status(F("The computer has    you in checkmate.   You lose!"));
+   status(F("The computer has    you in checkmate.   You lose!"));
 
-  // button dimensions (makes it easier to read/edit where they're drawn below)
-  #define BUTTON_X 120
-  #define BUTTON_Y 200
-  #define BUTTON_W 100
-  #define BUTTON_H 30
+   // button dimensions (makes it easier to read/edit where they're drawn below)
+   #define BUTTON_X 120
+   #define BUTTON_Y 200
+   #define BUTTON_W 100
+   #define BUTTON_H 30
 
-  cont.initButton(&tft, BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H,
-                 ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Continue", 2); 
-                     // x, y, w, h, outline, fill, text
-  cont.drawButton();
+   cont.initButton(&tft, BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H,
+                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Continue", 2); 
+                  // x, y, w, h, outline, fill, text
+   cont.drawButton();
 
-  while(!continued) {
+   while(!continued) {
 
-     digitalWrite(13, HIGH);
-     TSPoint p = ts.getPoint();
-     digitalWrite(13, LOW);
+      digitalWrite(13, HIGH);
+      TSPoint p = ts.getPoint();
+      digitalWrite(13, LOW);
   
-     pinMode(XM, OUTPUT);
-     pinMode(YP, OUTPUT);
+      pinMode(XM, OUTPUT);
+      pinMode(YP, OUTPUT);
      
-     if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
-       p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-       p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
-     }
+      if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+         p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+      }
 
-     if(cont.contains(p.x, p.y)) {
-       cont.drawButton(true);
-       continued = true;
-       tft.fillScreen(BLACK);
-     }
-  }
-
-  game_over();
+      if(cont.contains(p.x, p.y)) {
+         cont.drawButton(true);
+         continued = true;
+         tft.fillScreen(BLACK);
+      }
+   }
+   game_over();
 }
 
 void game_over() {
 
-  bool restart = false;
+   bool restart = false;
 
-  status(F("Game over! Start    another?"));
+   status(F("Game over! Start    another?"));
 
-  // button dimensions (makes it easier to read/edit where they're drawn below)
-  #define BUTTON_X 120
-  #define BUTTON_Y 200
-  #define BUTTON_W 100
-  #define BUTTON_H 30
+   // button dimensions (makes it easier to read/edit where they're drawn below)
+   #define BUTTON_X 120
+   #define BUTTON_Y 200
+   #define BUTTON_W 100
+   #define BUTTON_H 30
 
-  start.initButton(&tft, BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H,
-                 ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Start", 2); 
-                     // x, y, w, h, outline, fill, text
-  start.drawButton();
+   start.initButton(&tft, BUTTON_X, BUTTON_Y, BUTTON_W, BUTTON_H,
+                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Start", 2); 
+                  // x, y, w, h, outline, fill, text
+   start.drawButton();
 
-  while(!restart) {
+   while(!restart) {
 
-     digitalWrite(13, HIGH);
-     TSPoint p = ts.getPoint();
-     digitalWrite(13, LOW);
+      digitalWrite(13, HIGH);
+      TSPoint p = ts.getPoint();
+      digitalWrite(13, LOW);
   
-     pinMode(XM, OUTPUT);
-     pinMode(YP, OUTPUT);
+      pinMode(XM, OUTPUT);
+      pinMode(YP, OUTPUT);
   
-     if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
-       p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-       p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
-     }
+      if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+         p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+      }
 
-     if(start.contains(p.x, p.y)) {
-        start.drawButton(true);
-        restart = true;
-        tft.fillScreen(BLACK);
-     }
+      if(start.contains(p.x, p.y)) {
+         start.drawButton(true);
+         restart = true;
+         tft.fillScreen(BLACK);
+      }
+   }
+}
+
+void light_possible_move(char possible_move[2]) {
+  square_conv_dst(possible_move[0], possible_move[1]);
+  //test segment printing resulting binary to serial monitor
+  Serial.print("Dst: ");
+    Serial.print((int)d5dst); Serial.print((int)d4dst);
+    Serial.print((int)d3dst); Serial.print((int)d2dst);
+    Serial.print((int)d1dst); Serial.print((int)d0dst);
+    Serial.print('\n');
+/*
+  //loop to power pins based on binary digits
+  while(1) // while user's turn {
+	if(d5dst) dp5 = HIGH; else dp5 = LOW;
+	if(d4dst) dp4 = HIGH; else dp4 = LOW;
+	if(d3dst) dp3 = HIGH; else dp3 = LOW;
+	if(d2dst) dp2 = HIGH; else dp2 = LOW;
+	if(d1dst) dp1 = HIGH; else dp1 = LOW;
+	if(d0dst) dp0 = HIGH; else dp0 = LOW;
   }
+*/
+  delay(1000); //wait a second before showing another possible move
+}
+
+void user_hint(char best_move[5]) {
+  //separate functions that do the same thing - could easily be condensed if
+  //necessary by separating into one function to convert each digit, but this
+  //would make the main code longer
+  square_conv_src(best_move[0], best_move[1]);
+  square_conv_dst(best_move[2], best_move[3]);
+
+  //test loop printing resulting binary to serial monitor
+  while(1) {
+    Serial.print("Testing "); Serial.print(best_move);
+    Serial.print('\n');
+    Serial.print("Src: ");
+    Serial.print((int)d5src); Serial.print((int)d4src);
+    Serial.print((int)d3src); Serial.print((int)d2src);
+    Serial.print((int)d1src); Serial.print((int)d0src);
+    Serial.print('\n');
+    Serial.print("Dst: ");
+    Serial.print((int)d5dst); Serial.print((int)d4dst);
+    Serial.print((int)d3dst); Serial.print((int)d2dst);
+    Serial.print((int)d1dst); Serial.print((int)d0dst);
+    Serial.print('\n');
+    delay(1000);
+  }
+/*
+  //loop to power pins based on binary digits
+  while(1) // while user's turn {
+    if(d5src) dp5 = HIGH; else dp5 = LOW;
+    if(d4src) dp4 = HIGH; else dp4 = LOW;
+    if(d3src) dp3 = HIGH; else dp3 = LOW;
+    if(d2src) dp2 = HIGH; else dp2 = LOW;
+    if(d1src) dp1 = HIGH; else dp1 = LOW;
+    if(d0src) dp0 = HIGH; else dp0 = LOW;
+
+    if(d5dst) dp5 = HIGH; else dp5 = LOW;
+    if(d4dst) dp4 = HIGH; else dp4 = LOW;
+    if(d3dst) dp3 = HIGH; else dp3 = LOW;
+    if(d2dst) dp2 = HIGH; else dp2 = LOW;
+    if(d1dst) dp1 = HIGH; else dp1 = LOW;
+    if(d0dst) dp0 = HIGH; else dp0 = LOW;
+  }
+*/
+}
+
+//converts source square to binary (changes global variables)
+void square_conv_src (char let, char num) {
+  if(num == '5' | num == '6' | num == '7' | num == '8')
+    d5src = true;
+  else
+    d5src = false;
+  if(num == '3' | num == '4' | num == '7' | num == '8')
+    d4src = true;
+  else
+    d4src = false;
+  if(num == '2' | num == '4' | num == '6' | num == '8')
+    d3src = true;
+  else
+    d3src = false;
+  if(let == 'e' | let == 'f' | let == 'g' | let == 'h')
+    d2src = true;
+  else
+    d2src = false;
+  if(let == 'c' | let == 'd' | let == 'g' | let == 'h')
+    d1src = true;
+  else
+    d1src = false;
+  if(let == 'b' | let == 'd' | let == 'f' | let == 'h')
+    d0src = true;
+  else
+    d0src = false;
+}
+
+//converts destination square to binary (changes global variables)
+void square_conv_dst (char let, char num) {
+  if(num == '5' | num == '6' | num == '7' | num == '8')
+    d5dst = true;
+  else
+    d5dst = false;
+  if(num == '3' | num == '4' | num == '7' | num == '8')
+    d4dst = true;
+  else
+    d4dst = false;
+  if(num == '2' | num == '4' | num == '6' | num == '8')
+    d3dst = true;
+  else
+    d3dst = false;
+  if(let == 'e' | let == 'f' | let == 'g' | let == 'h')
+    d2dst = true;
+  else
+    d2dst = false;
+  if(let == 'c' | let == 'd' | let == 'g' | let == 'h')
+    d1dst = true;
+  else
+    d1dst = false;
+  if(let == 'b' | let == 'd' | let == 'f' | let == 'h')
+    d0dst = true;
+  else
+    d0dst = false;
+}
+
+// Function to initialize the chessboard
+void initializeChessboard() {
+   // Place white pieces
+   chessboard[0][0] = {ROOK, WHITE};
+   chessboard[0][1] = {KNIGHT, WHITE};
+   chessboard[0][2] = {BISHOP, WHITE};
+   chessboard[0][3] = {QUEEN, WHITE};
+   chessboard[0][4] = {KING, WHITE};
+   chessboard[0][5] = {BISHOP, WHITE};
+   chessboard[0][6] = {KNIGHT, WHITE};
+   chessboard[0][7] = {ROOK, WHITE};
+   for (int i = 0; i < BOARD_SIZE; i++) {
+      chessboard[1][i] = {PAWN, WHITE};
+   }
+
+   // Place black pieces
+   chessboard[7][0] = {ROOK, BLACK};
+   chessboard[7][1] = {KNIGHT, BLACK};
+   chessboard[7][2] = {BISHOP, BLACK};
+   chessboard[7][3] = {QUEEN, BLACK};
+   chessboard[7][4] = {KING, BLACK};
+   chessboard[7][5] = {BISHOP, BLACK};
+   chessboard[7][6] = {KNIGHT, BLACK};
+   chessboard[7][7] = {ROOK, BLACK};
+   for (int i = 0; i < BOARD_SIZE; i++) {
+      chessboard[6][i] = {PAWN, BLACK};
+   }
+
+   // Initialize empty squares
+   for (int i = 2; i < 6; i++) {
+      for (int j = 0; j < BOARD_SIZE; j++) {
+         chessboard[i][j] = {EMPTY, -1};
+      }
+   }
+}
+
+// Function to check if a square is within the board
+bool withinBoard(int x, int y) {
+   return (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE);
+}
+
+// Function to check if there is a piece at the given square
+bool isPieceAtSquare(int fileIndex, int rankIndex) {
+   return chessboard[rankIndex][fileIndex].type != EMPTY;
+}
+
+// Function to add a move to the list of possible moves
+void addMove(String* possibleMoves, int* numMoves, int x, int y) {
+   possibleMoves[*numMoves] = String((char)('a' + x)) + String(y + 1);
+   (*numMoves)++;
+}
+
+// Function to get possible moves for a piece at a given square
+void get_possible_moves(int fileIndex, int rankIndex, int pieceType, int pieceColor, bool canCastleKingSide, bool canCastleQueenSide, String* possibleMoves, int* numMoves) {
+   // Pawn moves
+   if (pieceType == PAWN) {
+      // Pawns can move one square forward
+      int direction = (pieceColor == WHITE) ? 1 : -1; // Define direction based on piece color
+      if (withinBoard(fileIndex, rankIndex + direction) && !isPieceAtSquare(fileIndex, rankIndex + direction)) {
+         addMove(possibleMoves, numMoves, fileIndex, rankIndex + direction);
+      }
+      // Pawns can optionally move two squares forward from the starting position
+      if ((pieceColor == WHITE && rankIndex == 1) || (pieceColor == BLACK && rankIndex == 6)) {
+         if (withinBoard(fileIndex, rankIndex + 2 * direction) && !isPieceAtSquare(fileIndex, rankIndex + direction) && !isPieceAtSquare(fileIndex, rankIndex + 2 * direction)) {
+               addMove(possibleMoves, numMoves, fileIndex, rankIndex + 2 * direction);
+         }
+      }
+      // Pawns can capture diagonally
+      if (withinBoard(fileIndex - 1, rankIndex + direction) && isPieceAtSquare(fileIndex - 1, rankIndex + direction) && chessboard[rankIndex + direction][fileIndex - 1].color != pieceColor) {
+         addMove(possibleMoves, numMoves, fileIndex - 1, rankIndex + direction);
+      }
+      if (withinBoard(fileIndex + 1, rankIndex + direction) && isPieceAtSquare(fileIndex + 1, rankIndex + direction) && chessboard[rankIndex + direction][fileIndex + 1].color != pieceColor) {
+         addMove(possibleMoves, numMoves, fileIndex + 1, rankIndex + direction);
+      }
+   }
+   // Knight moves
+   else if (pieceType == KNIGHT) {
+      int knightMoves[8][2] = {{-2, -1}, {-2, 1}, {-1, -2}, {-1, 2}, {1, -2}, {1, 2}, {2, -1}, {2, 1}};
+      for (int i = 0; i < 8; i++) {
+         int newX = fileIndex + knightMoves[i][0];
+         int newY = rankIndex + knightMoves[i][1];
+         if (withinBoard(newX, newY) && (!isPieceAtSquare(newX, newY) || chessboard[newY][newX].color != pieceColor)) {
+            addMove(possibleMoves, numMoves, newX, newY);
+         }
+      }
+   }
+   // Bishop moves
+   else if (pieceType == BISHOP || pieceType == QUEEN) {
+      int bishopDirections[4][2] = {{1, 1}, {-1, 1}, {1, -1}, {-1, -1}};
+      for (int i = 0; i < 4; i++) {
+         for (int j = 1; j < BOARD_SIZE; j++) {
+            int newX = fileIndex + bishopDirections[i][0] * j;
+            int newY = rankIndex + bishopDirections[i][1] * j;
+            if (withinBoard(newX, newY)) {
+               if (!isPieceAtSquare(newX, newY) || chessboard[newY][newX].color != pieceColor) {
+                  addMove(possibleMoves, numMoves, newX, newY);
+               } else {
+                  if (pieceType != QUEEN) break; // Queen can continue beyond obstacles
+                  else break; // If it is QUEEN we allow it to move to the captured position
+               }
+            } else {
+               break;
+            }
+         }
+      }
+   }
+   // Rook moves
+   else if (pieceType == ROOK || pieceType == QUEEN) {
+      int rookDirections[4][2] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+      for (int i = 0; i < 4; i++) {
+         for (int j = 1; j < BOARD_SIZE; j++) {
+            int newX = fileIndex + rookDirections[i][0] * j;
+            int newY = rankIndex + rookDirections[i][1] * j;
+            if (withinBoard(newX, newY)) {
+               if (!isPieceAtSquare(newX, newY) || chessboard[newY][newX].color != pieceColor) {
+                  addMove(possibleMoves, numMoves, newX, newY);
+               } else {
+                  if (pieceType != QUEEN) break; // Queen can continue beyond obstacles
+                     else break; // If it is QUEEN we allow it to move to the captured position
+               }
+            } else {
+               break;
+            }
+         }
+      }
+   }
+   // King moves
+   else if (pieceType == KING) {
+      int kingMoves[8][2] = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+      for (int i = 0; i < 8; i++) {
+         int newX = fileIndex + kingMoves[i][0];
+         int newY = rankIndex + kingMoves[i][1];
+         if (withinBoard(newX, newY) && (!isPieceAtSquare(newX, newY) || chessboard[newY][newX].color != pieceColor)) {
+            addMove(possibleMoves, numMoves, newX, newY);
+         }
+      }
+      // Castling moves...
+   }
+}
+
+// Function to print possible moves for a piece at a given square
+void print_possible_moves(int fileIndex, int rankIndex, int pieceType, int pieceColor, bool canCastleKingSide, bool canCastleQueenSide) {
+   String possibleMoves[BOARD_SIZE * BOARD_SIZE]; // Maximum possible moves
+   int numMoves = 0;
+   get_possible_moves(fileIndex, rankIndex, pieceType, pieceColor, canCastleKingSide, canCastleQueenSide, possibleMoves, &numMoves);
+
+   Serial.print("Possible Moves for ");
+   switch (pieceType) {
+      case PAWN:
+         Serial.print("Pawn");
+         break;
+      case KNIGHT:
+         Serial.print("Knight");
+         break;
+      case BISHOP:
+         Serial.print("Bishop");
+         break;
+      case ROOK:
+         Serial.print("Rook");
+         break;
+      case QUEEN:
+         Serial.print("Queen");
+         break;
+      case KING:
+         Serial.print("King");
+         break;
+      default:
+         Serial.print("Unknown Piece");
+   }
+   Serial.print(" at square ");
+   Serial.print(char('a' + fileIndex));
+   Serial.println(char('1' + rankIndex));
+
+   for (int i = 0; i < numMoves; i++) {
+      Serial.println("Move: " + possibleMoves[i]);
+   }
 }
