@@ -11,6 +11,7 @@
 #include <Elegoo_GFX.h>    // Core graphics library
 #include <Elegoo_TFTLCD.h> // Hardware-specific library
 #include <TouchScreen.h>
+#include <avr/wdt.h>
 
 // The control pins for the LCD can be assigned to any digital or
 // analog pins...but we'll use the analog pins as this allows us to
@@ -77,7 +78,7 @@ char sidelabels[2][9] = {"  White  ", "  Black  "};
 uint16_t sidecolors[2] = {ILI9341_PURPLE, ILI9341_PURPLE};
 
 Elegoo_GFX_Button diff_choice[3];
-char difflabels[3][9] = {"   Easy  ", "  Medium ", "   Hard  "};
+char difflabels[3][9] = {"  Easy  \0", "  Medium ","  Hard  \0"};
 uint16_t diffcolors[3] = {ILI9341_DARKGREEN, ILI9341_ORANGE, ILI9341_RED};
 
 //creates in-game options buttons for user
@@ -106,7 +107,6 @@ Elegoo_GFX_Button done;
 char promo_to;
 bool promo_done = false;
 bool cpu_promo_done = false;
-bool confirmed = false;
 
 //global variables that hold binary digits for source and destination squares
 bool d5src, d4src, d3src, d2src, d1src, d0src;
@@ -149,10 +149,11 @@ Piece chessboard[BOARD_SIZE][BOARD_SIZE];
 #define engineSA 1                               // Slave Address for Chess Engine controller
 
 char bestMove[5] = {0}; // Initialize best move globally
-char inputMove[5];
+char inputMove[5] = "none\0";
 char outputMove[6];
 
 bool isCastle, isCapture;
+bool moveReceived = false;
 
 void setup(){
    Wire.begin(engineSA);
@@ -171,24 +172,19 @@ void setup(){
    lastH[0] = 0;
    pinMode(13, OUTPUT);
 
-   setup_menu();
-
-   Wire.beginTransmission(boardSA);
-   Wire.write(k);          // Transmit playing side
-   Wire.endTransmission();
+   setup_menu(true);
 }
 
 void loop(){
-   ingame_menu();
    int r;
-
+   delay(500);
    // Calculate and output human's best move
    UserBestMove();
+   delay(500);
 
    // Take move from human
    x1=x2=y1=y2=-1;
    takeMove();
-
    /* Turn for ARDUINO */
     
    K=*c-16*c[1]+799,L=c[2]-16*c[3]+799;      /* parse entered move */
@@ -196,11 +192,9 @@ void loop(){
    //T=0x3F;                                   /* T=Computer Play strength */
    bkp();                                    /* Save the board just in case */    
    r = D(-I,I,Q,O,1,3);                      /* Check & do the human movement */
-   Serial.print("Value of r (205): ");
-   Serial.println(r);
    if( !(r>-I+1) ){
       // Lose
-      gameOver();
+      game_over();
    } else {
       // Move Not Found!
       illegal_move_alert();
@@ -219,10 +213,10 @@ void loop(){
       N=0;
       //T=0x3F;                               /* T=Computer Play strength */
       r = D(-I,I,Q,O,1,3);                  /* Check & do*/
-      if( !(r>-I+1) ) gameOver();
+      if( !(r>-I+1) ) game_over();
       if(k == 0x08){
          //ERR DB
-         gameOver();
+         game_over();
       }
         
       strcpy(lastM, c);                         /* Valid ARDUINO movement */
@@ -257,17 +251,14 @@ void loop(){
    N=0;
    //T=0x3F;                                 /* T=Computer Play strength */
    r = D(-I,I,Q,O,1,3);                      /* Think & do computer's move*/    
-
-   Serial.print("Value of r (267): ");
-   Serial.println(r);
    if( !(r>-I+1) ){
       // Lose*
-      gameOver();
+      game_over();
    }
     
    if(k == 0x08){                            /* Some times the algorithm do not */
       // ERR 3                               /* execute the move and do not change the turn flag */
-      gameOver();                            /* 1. b1c3  c7c5?       2. f2f4? */
+      game_over();                            /* 1. b1c3  c7c5?       2. f2f4? */
    }
 
    strcpy(lastM, c);                         /* Valid ARDUINO movement */
@@ -296,23 +287,47 @@ void loop(){
 
    strcpy(c, "a1a1");                        /* Execute a invalid move to check score again */
    r = D(-I,I,Q,O,1,3);
-   Serial.print("Value of r (305): ");
-   Serial.println(r);
    if( !(r>-I+1) ){
-      gameOver();
+      game_over();
    }
    if(k == 0x08){                            /* Some times the algorithm do not */
       // ERR 3                               /* execute the move and do not change the turn flag */
-      gameOver();                            /* 1. b1c3  c7c5?       2. f2f4? */
+      game_over();                            /* 1. b1c3  c7c5?       2. f2f4? */
    }    
    delay(500);
 }
 
 void takeMove(){  
-   for(;;){
+   tft.fillScreen(ILI9341_DARKGREEN);
+   status(F("Game options"));
+
+   // button dimensions (makes it easier to read/edit where they're drawn below)
+   #define BUTTON_X 120
+   #define BUTTON_Y 100
+   #define BUTTON_W 100
+   #define BUTTON_H 30
+   #define BUTTON_SPACING_X 20
+   #define BUTTON_SPACING_Y 20
+   #define BUTTON_TEXTSIZE 2
+  
+  for (uint8_t row=0; row<3; row++) {
+      for (uint8_t col=0; col<1; col++) {
+         ingame[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+               BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
+               BUTTON_W, BUTTON_H, ILI9341_WHITE, ingame_colors[col + row], ILI9341_WHITE,
+               ingame_labels[col + row], BUTTON_TEXTSIZE); 
+         ingame[col + row].drawButton();
+      }
+   }
+
+   while(moveReceived==false) {
+      ingame_menu();
+
       if (inputMove[0] != 'n')
       {
          strcpy(c,inputMove);
+         strcpy(inputMove,"none\0");
+         moveReceived=false;
          break;
       }
    }
@@ -532,11 +547,6 @@ void searchDataBase(){
    }   
 }
 
-void gameOver(){
-   //for(;;);
-   you_win();
-}
-
 void bkp(){
    for(int i=0; i<16*8+1; i++){
       bk[i] = b[i];
@@ -654,6 +664,7 @@ void receiveEvent() {
    inputMove[4] = '\0'; // Null-terminate the received char array
    Serial.print("Input Move: ");
    Serial.println(inputMove); // Print received data to serial monitor
+   moveReceived=true;
 }
 
 // prints line of text
@@ -672,184 +683,139 @@ void status_coord(int x, int y, const __FlashStringHelper *msg) {
    tft.print(msg);
 }
 
-void setup_menu() {
+void setup_menu(bool isWhiteSelected) {
+    
+    // button dimensions (makes it easier to read/edit where they're drawn below)
+    #define BUTTON_X 120
+    #define BUTTON_Y 50
+    #define BUTTON_W 100
+    #define BUTTON_H 30
+    #define BUTTON_SPACING_X 10
+    #define BUTTON_SPACING_Y 10
+    #define BUTTON_TEXTSIZE 2
 
-   status(F("Select side:"));
+    tft.fillScreen(BLACK);
 
-   // button dimensions (makes it easier to read/edit where they're drawn below)
-   #define BUTTON_X 120
-   #define BUTTON_Y 50
-   #define BUTTON_W 80
-   #define BUTTON_H 30
-   #define BUTTON_SPACING_X 10
-   #define BUTTON_SPACING_Y 10
-   #define BUTTON_TEXTSIZE 2
+    status(F("Select side:"));
 
-   for (uint8_t row=0; row<2; row++) {
-      for (uint8_t col=0; col<1; col++) {
-         side_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
-               BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
-               BUTTON_W, BUTTON_H, ILI9341_WHITE, sidecolors[col + row], ILI9341_WHITE,
-               sidelabels[col + row], BUTTON_TEXTSIZE); 
-         side_choice[col + row].drawButton();
-      }
-   }
+    // Draw new buttons
+    for (uint8_t row = 0; row < 2; row++) {
+        for (uint8_t col = 0; col < 1; col++) {
+            side_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+                BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y), // x, y, w, h, outline, fill, text
+                BUTTON_W, BUTTON_H, ILI9341_WHITE, sidecolors[col + row], ILI9341_WHITE,
+                sidelabels[col + row], BUTTON_TEXTSIZE);
+            side_choice[col + row].drawButton();
+        }
+    }
+    
+    status_coord(10, 120, F("Select difficulty:"));
 
-   status_coord(10, 120, F("Select difficulty:"));
+    for (uint8_t row = 0; row < 3; row++) {
+        for (uint8_t col = 0; col < 1; col++) {
+            diff_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+                160+row*(BUTTON_H+BUTTON_SPACING_Y), BUTTON_W, BUTTON_H,
+                ILI9341_WHITE,  diffcolors[col + row], ILI9341_WHITE,
+                difflabels[col + row], BUTTON_TEXTSIZE);
+            diff_choice[col + row].drawButton();
+        }
+    }
 
-   for (uint8_t row=0; row<3; row++) {
-      for (uint8_t col=0; col<1; col++) {
-         diff_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
-               160+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
-               BUTTON_W, BUTTON_H, ILI9341_WHITE,  diffcolors[col + row], ILI9341_WHITE,
-               difflabels[col + row], BUTTON_TEXTSIZE); 
-         diff_choice[col + row].drawButton();
-      }
-   }
+    confirm.initButton(&tft, BUTTON_X, 300, BUTTON_W, BUTTON_H,
+                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Done", BUTTON_TEXTSIZE); 
+    confirm.drawButton();
 
-   confirm.initButton(&tft, BUTTON_X, 300, BUTTON_W, BUTTON_H,
-                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", 2); 
-                  // x, y, w, h, outline, fill, text
-   confirm.drawButton();
-   bool confirmed = false;
+    if(isWhiteSelected) {
+        side_choice[0].drawButton(true);  // draw inverted version of button
+        side_choice[1].drawButton(false);
+    } else {
+        side_choice[0].drawButton(false);  // draw inverted version of button
+        side_choice[1].drawButton(true);
+    }
 
-   int chosen_side = -1;
-   int chosen_diff = -1;
+    if (T==0x01) {
+        diff_choice[0].drawButton(true);  // draw inverted version of button
+        diff_choice[1].drawButton(false); // make sure other buttons revert to original color
+        diff_choice[2].drawButton(false);
+    } else if (T==0x20) {
+        diff_choice[0].drawButton(false);  // draw inverted version of button
+        diff_choice[1].drawButton(true); // make sure other buttons revert to original color
+        diff_choice[2].drawButton(false);
+    } else if (T==0x3F) {
+        diff_choice[0].drawButton(false);  // draw inverted version of button
+        diff_choice[1].drawButton(false);  // make sure other buttons revert to original color
+        diff_choice[2].drawButton(true);
+    } else {
+        diff_choice[0].drawButton(false);  // draw inverted version of button
+        diff_choice[1].drawButton(false);  // make sure other buttons revert to original color
+        diff_choice[2].drawButton(false);
+    }
+     
+    while(true) {
+        // Listen for touchscreen input
+        TSPoint p = ts.getPoint();
+        pinMode(XM, OUTPUT);
+        pinMode(YP, OUTPUT);
 
-   while(!confirmed |(chosen_side==-1 | chosen_diff==-1)) { 
-      digitalWrite(13, HIGH);
-      TSPoint p = ts.getPoint();
-      digitalWrite(13, LOW);
-  
-      pinMode(XM, OUTPUT);
-      pinMode(YP, OUTPUT);
-  
-      if (p.z > MINPRESSURE && p.z < MAXPRESSURE && chosen_side == 1) {
-         p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
-      }
-
-      if (p.z > MINPRESSURE && p.z < MAXPRESSURE && chosen_side == 2) {
-         p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
-      }
-
-      if (side_choice[0].contains(p.x, p.y)) {
-         chosen_side = 1; // white
-         k=16;
-
-         tft.fillScreen(BLACK);
-         tft.setRotation(2);
-
-         status(F("Select side:"));
-
-         for (uint8_t row=0; row<2; row++) {
-            for (uint8_t col=0; col<1; col++) {
-               side_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
-                     BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
-                     BUTTON_W, BUTTON_H, ILI9341_WHITE, sidecolors[col + row], ILI9341_WHITE,
-                     sidelabels[col + row], BUTTON_TEXTSIZE); 
-               side_choice[col + row].drawButton();
+        // Check if the touch input is detected
+        if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+            // Normalize the touch coordinates
+            p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+            if (isWhiteSelected)
+            {
+                p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+            } else {
+                p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
             }
-         }
+            
+            if (side_choice[0].contains(p.x, p.y)) {    // white
+                k=16;
+                tft.fillScreen(BLACK);
+                tft.setRotation(2);
 
-         status_coord(10, 120, F("Select difficulty:"));
+                side_choice[0].drawButton(true);  // draw inverted version of button
+                side_choice[1].drawButton(false); // make sure other button reverts to original color
+                isWhiteSelected=true;
+                setup_menu(isWhiteSelected);
+            } else if (side_choice[1].contains(p.x, p.y)) {     // black
+                k^=24;
+                tft.fillScreen(BLACK);
+                tft.setRotation(0);
 
-         for (uint8_t row=0; row<3; row++) {
-            for (uint8_t col=0; col<1; col++) {
-               diff_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
-                     160+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
-                     BUTTON_W, BUTTON_H, ILI9341_WHITE,  diffcolors[col + row], ILI9341_WHITE,
-                     difflabels[col + row], BUTTON_TEXTSIZE); 
-               diff_choice[col + row].drawButton();
+                side_choice[1].drawButton(true);  // draw inverted version of button
+                side_choice[0].drawButton(false); // make sure other button reverts to original color
+                isWhiteSelected=false;
+                setup_menu(isWhiteSelected);
             }
-         }
 
-         confirm.initButton(&tft, BUTTON_X, 300, BUTTON_W, BUTTON_H,
-                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", 2); 
-                  // x, y, w, h, outline, fill, text
-         confirm.drawButton();
-
-         side_choice[0].drawButton(true);  // draw inverted version of button
-         side_choice[1].drawButton(false); // make sure other button reverts to original color
-      } else if (side_choice[1].contains(p.x, p.y)) {
-         chosen_side = 2; // black
-         k^=24;
-
-         tft.fillScreen(BLACK);
-         tft.setRotation(0);
-
-         (F("Select side:"));
-
-         for (uint8_t row=0; row<2; row++) {
-            for (uint8_t col=0; col<1; col++) {
-               side_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
-                     BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
-                     BUTTON_W, BUTTON_H, ILI9341_WHITE, sidecolors[col + row], ILI9341_WHITE,
-                     sidelabels[col + row], BUTTON_TEXTSIZE); 
-               side_choice[col + row].drawButton();
+            if (diff_choice[0].contains(p.x, p.y)) {
+                T = 0x01;  // easy
+                diff_choice[0].drawButton(true);  // draw inverted version of button
+                diff_choice[1].drawButton(false); // make sure other buttons revert to original color
+                diff_choice[2].drawButton(false);
+            } else if (diff_choice[1].contains(p.x, p.y)) {
+                T = 0x20; // medium
+                diff_choice[1].drawButton(true);  // draw inverted version of button
+                diff_choice[0].drawButton(false); // make sure other buttons revert to original color
+                diff_choice[2].drawButton(false);
+            } else if (diff_choice[2].contains(p.x, p.y)) {
+                T = 0x3F; // hard
+                diff_choice[2].drawButton(true);  // draw inverted version of button
+                diff_choice[0].drawButton(false); // make sure other buttons revert to original color
+                diff_choice[1].drawButton(false);
             }
-         }
 
-         status_coord(10, 120, F("Select difficulty:"));
-
-         for (uint8_t row=0; row<3; row++) {
-            for (uint8_t col=0; col<1; col++) {
-               diff_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
-                     160+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
-                     BUTTON_W, BUTTON_H, ILI9341_WHITE,  diffcolors[col + row], ILI9341_WHITE,
-                     difflabels[col + row], BUTTON_TEXTSIZE); 
-               diff_choice[col + row].drawButton();
+            if (confirm.contains(p.x, p.y)) {
+                // Handle confirm button press
+                confirm.drawButton(true); // Invert the button
+                confirm.drawButton(false);
+                return; // Exit the function to prevent further processing
             }
-         }
-
-         confirm.initButton(&tft, BUTTON_X, 300, BUTTON_W, BUTTON_H,
-                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", 2); 
-                  // x, y, w, h, outline, fill, text
-         confirm.drawButton();
-
-         side_choice[1].drawButton(true);  // draw inverted version of button
-         side_choice[0].drawButton(false); // make sure other button reverts to original color
-      }
-
-      if (diff_choice[0].contains(p.x, p.y)) {
-         chosen_diff = 1;
-         T = 0x01;  // easy
-         diff_choice[0].drawButton(true);  // draw inverted version of button
-         diff_choice[1].drawButton(false); // make sure other buttons revert to original color
-         diff_choice[2].drawButton(false);
-      } else if (diff_choice[1].contains(p.x, p.y)) {
-         chosen_diff = 2;
-         T = 0x20; // medium
-         diff_choice[1].drawButton(true);  // draw inverted version of button
-         diff_choice[0].drawButton(false); // make sure other buttons revert to original color
-         diff_choice[2].drawButton(false);
-      } else if (diff_choice[2].contains(p.x, p.y)) {
-         chosen_diff = 3;
-         T = 0x3F; // hard
-         diff_choice[2].drawButton(true);  // draw inverted version of button
-         diff_choice[0].drawButton(false); // make sure other buttons revert to original color
-         diff_choice[1].drawButton(false);
-      }
-      /*
-      Serial.print("chosen_side : ");
-      Serial.println(chosen_side);
-      Serial.print("chosen_diff : ");
-      Serial.println(chosen_diff);
-      Serial.print("(p.x, p.y) : (");
-      Serial.print(p.x); Serial.print(", ");
-      Serial.print(p.y); Serial.println(")");
-      */
-      if((chosen_side!=-1) && (chosen_diff!=-1) && confirm.contains(p.x, p.y)) {
-         confirmed = true;
-         confirm.drawButton(true);  // draw inverted version of buttons
-      }
-   }
-   Serial.print("Selected Options: k = ");
-   Serial.print(k);
-   Serial.print(", T = ");
-   Serial.println(T);
-   tft.fillScreen(BLACK);
+        }
+    }
+   Wire.beginTransmission(boardSA);
+   Wire.write(k);          // Transmit playing side
+   Wire.endTransmission();
    setup_board();
 }
 
@@ -1006,9 +972,10 @@ void cpu_promo(int cpu_promo_to) {
 }
 
 void illegal_move_alert() {
+   bool confirmed = false;
 
    tft.fillScreen(0xC800); // dark red
-   status(F("You can't make that move. Please reset the board to its    previous state and  then confirm."));
+   status(F("You can't make that move. Please reset  the board to its    previous state and  then confirm."));
 
    // button dimensions (makes it easier to read/edit where they're drawn below)
    #define BUTTON_X 120
@@ -1102,28 +1069,6 @@ void forfeit_confirm() {
 
 void ingame_menu() {
   
-   tft.fillScreen(ILI9341_DARKGREEN);
-   status(F("Game options"));
-
-   // button dimensions (makes it easier to read/edit where they're drawn below)
-   #define BUTTON_X 120
-   #define BUTTON_Y 100
-   #define BUTTON_W 100
-   #define BUTTON_H 30
-   #define BUTTON_SPACING_X 20
-   #define BUTTON_SPACING_Y 20
-   #define BUTTON_TEXTSIZE 2
-  
-  for (uint8_t row=0; row<3; row++) {
-      for (uint8_t col=0; col<1; col++) {
-         ingame[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
-               BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y),    // x, y, w, h, outline, fill, text
-               BUTTON_W, BUTTON_H, ILI9341_WHITE, ingame_colors[col + row], ILI9341_WHITE,
-               ingame_labels[col + row], BUTTON_TEXTSIZE); 
-         ingame[col + row].drawButton();
-      }
-   }
-  
    if(hints_on) { // corrects hint button color if returning to menu from another screen
       ingame[0].drawButton(true);  // draw inverted version of button
    }
@@ -1146,10 +1091,11 @@ void ingame_menu() {
       }
      
       if(ingame[0].justReleased()) { // makes it only redraw if button was just released (will flash otherwise)
-         if(hints_on)
+         if(hints_on) {
             ingame[0].drawButton(true);  // draw inverted version of button
-         else
+         } else {
             ingame[0].drawButton(false); // draw regular button
+         }
       }
 
       if(ingame[1].justReleased()) {
@@ -1300,8 +1246,15 @@ void game_over() {
          start.drawButton(true);
          restart = true;
          tft.fillScreen(BLACK);
+         reboot();
       }
    }
+}
+
+void reboot() {
+  wdt_disable();
+  wdt_enable(WDTO_15MS);
+  while (1) {}
 }
 
 void light_possible_move(char possible_move[2]) {
@@ -1327,45 +1280,43 @@ void light_possible_move(char possible_move[2]) {
 }
 
 void user_hint(char best_move[5]) {
-  //separate functions that do the same thing - could easily be condensed if
-  //necessary by separating into one function to convert each digit, but this
-  //would make the main code longer
-  square_conv_src(best_move[0], best_move[1]);
-  square_conv_dst(best_move[2], best_move[3]);
+   //separate functions that do the same thing - could easily be condensed if
+   //necessary by separating into one function to convert each digit, but this
+   //would make the main code longer
+   square_conv_src(best_move[0], best_move[1]);
+   square_conv_dst(best_move[2], best_move[3]);
 
-  //test loop printing resulting binary to serial monitor
-  while(1) {
-    Serial.print("Testing "); Serial.print(best_move);
-    Serial.print('\n');
-    Serial.print("Src: ");
-    Serial.print((int)d5src); Serial.print((int)d4src);
-    Serial.print((int)d3src); Serial.print((int)d2src);
-    Serial.print((int)d1src); Serial.print((int)d0src);
-    Serial.print('\n');
-    Serial.print("Dst: ");
-    Serial.print((int)d5dst); Serial.print((int)d4dst);
-    Serial.print((int)d3dst); Serial.print((int)d2dst);
-    Serial.print((int)d1dst); Serial.print((int)d0dst);
-    Serial.print('\n');
-    delay(1000);
-  }
-/*
-  //loop to power pins based on binary digits
-  while(1) // while user's turn {
-    if(d5src) dp5 = HIGH; else dp5 = LOW;
-    if(d4src) dp4 = HIGH; else dp4 = LOW;
-    if(d3src) dp3 = HIGH; else dp3 = LOW;
-    if(d2src) dp2 = HIGH; else dp2 = LOW;
-    if(d1src) dp1 = HIGH; else dp1 = LOW;
-    if(d0src) dp0 = HIGH; else dp0 = LOW;
+   //test loop printing resulting binary to serial monitor
+   Serial.print("Testing "); Serial.print(best_move);
+   Serial.print('\n');
+   Serial.print("Src: ");
+   Serial.print((int)d5src); Serial.print((int)d4src);
+   Serial.print((int)d3src); Serial.print((int)d2src);
+   Serial.print((int)d1src); Serial.print((int)d0src);
+   Serial.print('\n');
+   Serial.print("Dst: ");
+   Serial.print((int)d5dst); Serial.print((int)d4dst);
+   Serial.print((int)d3dst); Serial.print((int)d2dst);
+   Serial.print((int)d1dst); Serial.print((int)d0dst);
+   Serial.print('\n');
+   delay(1000);
 
-    if(d5dst) dp5 = HIGH; else dp5 = LOW;
-    if(d4dst) dp4 = HIGH; else dp4 = LOW;
-    if(d3dst) dp3 = HIGH; else dp3 = LOW;
-    if(d2dst) dp2 = HIGH; else dp2 = LOW;
-    if(d1dst) dp1 = HIGH; else dp1 = LOW;
-    if(d0dst) dp0 = HIGH; else dp0 = LOW;
-  }
+/*   loop to power pins based on binary digits
+   while(1) // while user's turn {
+      if(d5src) dp5 = HIGH; else dp5 = LOW;
+      if(d4src) dp4 = HIGH; else dp4 = LOW;
+      if(d3src) dp3 = HIGH; else dp3 = LOW;
+      if(d2src) dp2 = HIGH; else dp2 = LOW;
+      if(d1src) dp1 = HIGH; else dp1 = LOW;
+      if(d0src) dp0 = HIGH; else dp0 = LOW;
+
+      if(d5dst) dp5 = HIGH; else dp5 = LOW;
+      if(d4dst) dp4 = HIGH; else dp4 = LOW;
+      if(d3dst) dp3 = HIGH; else dp3 = LOW;
+      if(d2dst) dp2 = HIGH; else dp2 = LOW;
+      if(d1dst) dp1 = HIGH; else dp1 = LOW;
+      if(d0dst) dp0 = HIGH; else dp0 = LOW;
+   }
 */
 }
 
