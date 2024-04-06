@@ -154,6 +154,7 @@ char outputMove[6];
 
 bool isCastle, isCapture;
 bool moveReceived = false;
+bool isWhiteSelected = true;
 
 void setup(){
    Wire.begin(engineSA);
@@ -172,7 +173,8 @@ void setup(){
    lastH[0] = 0;
    pinMode(13, OUTPUT);
 
-   setup_menu(true);
+   setup_menu(isWhiteSelected);
+   setup_board();
 }
 
 void loop(){
@@ -777,6 +779,7 @@ void setup_menu(bool isWhiteSelected) {
                 side_choice[1].drawButton(false); // make sure other button reverts to original color
                 isWhiteSelected=true;
                 setup_menu(isWhiteSelected);
+                return;
             } else if (side_choice[1].contains(p.x, p.y)) {     // black
                 k^=24;
                 tft.fillScreen(BLACK);
@@ -786,6 +789,7 @@ void setup_menu(bool isWhiteSelected) {
                 side_choice[0].drawButton(false); // make sure other button reverts to original color
                 isWhiteSelected=false;
                 setup_menu(isWhiteSelected);
+                return;
             }
 
             if (diff_choice[0].contains(p.x, p.y)) {
@@ -816,10 +820,10 @@ void setup_menu(bool isWhiteSelected) {
    Wire.beginTransmission(boardSA);
    Wire.write(k);          // Transmit playing side
    Wire.endTransmission();
-   setup_board();
 }
 
 void setup_board() {
+   tft.fillScreen(BLACK);
   
    status(F("Please confirm the  board has been set  up according to the manual."));
   
@@ -848,7 +852,12 @@ void setup_board() {
   
       if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
          p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         if (isWhiteSelected)
+         {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         } else {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
+         }      
       }
 
       if(confirm.contains(p.x, p.y)) {
@@ -893,7 +902,12 @@ void user_promo() {
   
       if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
          p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         if (isWhiteSelected)
+         {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         } else {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
+         }      
       }
 
       //check if all buttons were pressed
@@ -959,7 +973,12 @@ void cpu_promo(int cpu_promo_to) {
   
       if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
          p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         if (isWhiteSelected)
+         {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         } else {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
+         }      
       }
 
       if(done.contains(p.x, p.y)) {
@@ -999,7 +1018,12 @@ void illegal_move_alert() {
   
       if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
          p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         if (isWhiteSelected)
+         {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         } else {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
+         }
       }
 
       if(confirm.contains(p.x, p.y)) {
@@ -1046,7 +1070,12 @@ void forfeit_confirm() {
 
       if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
          p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         if (isWhiteSelected)
+         {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         } else {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
+         }      
       }
 
       if (yn[0].contains(p.x, p.y)) { // forfeit confirmed
@@ -1087,7 +1116,12 @@ void ingame_menu() {
   
       if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
          p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         if (isWhiteSelected)
+         {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         } else {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
+         }      
       }
      
       if(ingame[0].justReleased()) { // makes it only redraw if button was just released (will flash otherwise)
@@ -1159,7 +1193,12 @@ void you_win() {
      
       if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
          p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         if (isWhiteSelected)
+         {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         } else {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
+         }      
       }
 
       if(cont.contains(p.x, p.y)) {
@@ -1199,7 +1238,12 @@ void you_lose() {
      
       if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
          p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         if (isWhiteSelected)
+         {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         } else {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
+         }      
       }
 
       if(cont.contains(p.x, p.y)) {
@@ -1239,7 +1283,12 @@ void game_over() {
   
       if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
          p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-         p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         if (isWhiteSelected)
+         {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         } else {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
+         }      
       }
 
       if(start.contains(p.x, p.y)) {
@@ -1267,7 +1316,7 @@ void light_possible_move(char possible_move[2]) {
     Serial.print('\n');
 /*
   //loop to power pins based on binary digits
-  while(1) // while user's turn {
+  while(hints_on) // while user's turn {
 	if(d5dst) dp5 = HIGH; else dp5 = LOW;
 	if(d4dst) dp4 = HIGH; else dp4 = LOW;
 	if(d3dst) dp3 = HIGH; else dp3 = LOW;
@@ -1302,7 +1351,7 @@ void user_hint(char best_move[5]) {
    delay(1000);
 
 /*   loop to power pins based on binary digits
-   while(1) // while user's turn {
+   while(hints_on) // while user's turn {
       if(d5src) dp5 = HIGH; else dp5 = LOW;
       if(d4src) dp4 = HIGH; else dp4 = LOW;
       if(d3src) dp3 = HIGH; else dp3 = LOW;
