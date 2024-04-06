@@ -148,7 +148,7 @@ Piece chessboard[BOARD_SIZE][BOARD_SIZE];
 #define boardSA 2                                // Slave Address for Board/LCD controller
 #define engineSA 1                               // Slave Address for Chess Engine controller
 
-char bestMove[5] = "e2e4\0"; // Initialize best move globally
+char bestMove[5] = {0}; // Initialize best move globally
 char inputMove[5] = "none\0";
 char outputMove[6];
 
@@ -174,10 +174,6 @@ void setup(){
    pinMode(13, OUTPUT);
 
    setup_menu();
-   if (isWhiteSelected==false)
-   {
-      strcpy(bestMove,"c7c5\0");
-   }
    setup_board();
 }
 
@@ -777,6 +773,7 @@ void setup_menu() {
          if (side_choice[0].contains(p.x, p.y)) {    // white
             k=16;
             isWhiteSelected=true;
+            delay(100);
             tft.fillScreen(BLACK);
             tft.setRotation(2);
 
@@ -787,6 +784,7 @@ void setup_menu() {
          } else if (side_choice[1].contains(p.x, p.y)) {     // black
             k^=24;
             isWhiteSelected=false;
+            delay(100);
             tft.fillScreen(BLACK);
             tft.setRotation(0);
 
@@ -816,7 +814,6 @@ void setup_menu() {
          if (confirm.contains(p.x, p.y)) {
             // Handle confirm button press
             confirm.drawButton(true); // Invert the button
-            confirm.drawButton(false);
             return; // Exit the function to prevent further processing
          }
       }
@@ -869,8 +866,8 @@ void setup_board() {
          }
       }
    }
-  tft.fillScreen(BLACK);
-  // Start game here
+   tft.fillScreen(BLACK);
+   // Start game here
 }
 
 void user_promo() {
@@ -1151,8 +1148,6 @@ void ingame_menu() {
             ingame[2].press(true);  // tell the button it is pressed
             ingame[2].drawButton(true);  // draw inverted version of button
             user_forfeit = true;
-            delay(1000); //time for user to see button invert
-            ingame[2].drawButton(false);
             tft.fillScreen(BLACK);
             forfeit_confirm();
          } else { // in testing, this seemed necessary for delay in this particular case, idk why
@@ -1331,6 +1326,14 @@ void light_possible_move(char possible_move[2]) {
 }
 
 void user_hint(char best_move[5]) {
+   if (best_move[0] == '\0' && isWhiteSelected == false)
+   {
+      strcpy(best_move,"c7c5\0");
+   } else if (best_move[0] == '\0' && isWhiteSelected == true)
+   {
+      strcpy(best_move,"e2e4\0");
+   }
+   
    //separate functions that do the same thing - could easily be condensed if
    //necessary by separating into one function to convert each digit, but this
    //would make the main code longer
