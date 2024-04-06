@@ -41,6 +41,7 @@ int promoteFlag;
 bool promoteWhite=false;
 bool promoteBlack=false;
 int dataIn;
+bool isWhiteSelected;
 
 //This array contains the binary version of the current board that the inputs from the capacitive touch sensors will be compared against to see if a move has been made
 int old_boardState[64]={1, 1, 0, 0, 0, 0, 0, 0,
@@ -332,9 +333,15 @@ void tcaselect(uint8_t i)
 // function that executes whenever data is received from the master
 // this function is registered as an event,  see setup()
 void receiveEvent() {
-   if(Wire.available()) {
-      dataIn = Wire.read();
+  if(Wire.available()) {
+    dataIn = Wire.read();
+    if (dataIn == 0) {
+      isWhiteSelected = false;
+    } else if (dataIn == 1) {
+      isWhiteSelected = true;
+    } else {
       selectedPiece(dataIn);
+    }
   }
 }
 
