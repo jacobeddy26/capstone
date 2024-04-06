@@ -2,13 +2,34 @@
 bool d5src, d4src, d3src, d2src, d1src, d0src;
 bool d5dst, d4dst, d3dst, d2dst, d1dst, d0dst;
 
+char best_move[5];
+
 void setup() {
   Serial.begin(115200);
   //hardcoded square ID for testing only
   //(this and the function call
   // together perform the function of the chess engine)
-  char best_move[4] = {'g','1','h','1'};
+  strcpy(best_move,"a2a4\0");
   user_hint(best_move);
+  
+  strcpy(best_move,"b1c3\0");
+  user_hint(best_move);
+  
+  strcpy(best_move,"d4e5\0");
+  user_hint(best_move);
+  
+  strcpy(best_move,"g6h7\0");
+  user_hint(best_move);
+  
+  strcpy(best_move,"d2d4\0");
+  user_hint(best_move);
+  
+  strcpy(best_move,"f1h1\0");
+  user_hint(best_move);
+  
+  strcpy(best_move,"c1a3\0");
+  user_hint(best_move);
+
 
 /*  hardcoded dst squares for testing only
   char possible_move_1[2] = {'a','2'};
@@ -26,10 +47,9 @@ void light_possible_move(char possible_move[2]) {
   square_conv_dst(possible_move[0], possible_move[1]);
   //test segment printing resulting binary to serial monitor
   Serial.print("Dst: ");
-    Serial.print((int)d5dst); Serial.print((int)d4dst);
-    Serial.print((int)d3dst); Serial.print((int)d2dst);
-    Serial.print((int)d1dst); Serial.print((int)d0dst);
-    Serial.print('\n');
+  Serial.print((int)d5dst); Serial.print((int)d4dst);
+  Serial.print((int)d3dst); Serial.print((int)d2dst);
+  Serial.print((int)d1dst); Serial.println((int)d0dst);
 /*
   //loop to power pins based on binary digits
   while(1) // while user's turn {
@@ -52,19 +72,16 @@ void user_hint(char best_move[4]) {
   square_conv_dst(best_move[2], best_move[3]);
 
   //test loop printing resulting binary to serial monitor
-  while(1) {
-    Serial.print("Testing "); Serial.print(best_move);
-    Serial.print('\n');
-    Serial.print("Src: ");
-    Serial.print((int)d5src); Serial.print((int)d4src);
-    Serial.print((int)d3src); Serial.print((int)d2src);
-    Serial.print((int)d1src); Serial.println((int)d0src);
-    Serial.print("Dst: ");
-    Serial.print((int)d5dst); Serial.print((int)d4dst);
-    Serial.print((int)d3dst); Serial.print((int)d2dst);
-    Serial.print((int)d1dst); Serial.println((int)d0dst);
-    delay(1000);
-  }
+  Serial.print("Testing "); Serial.println(best_move);
+  Serial.print("Src: ");
+  Serial.print((int)d5src); Serial.print((int)d4src);
+  Serial.print((int)d3src); Serial.print((int)d2src);
+  Serial.print((int)d1src); Serial.println((int)d0src);
+  Serial.print("Dst: ");
+  Serial.print((int)d5dst); Serial.print((int)d4dst);
+  Serial.print((int)d3dst); Serial.print((int)d2dst);
+  Serial.print((int)d1dst); Serial.println((int)d0dst);
+  delay(1000);
 /*
   //loop to power pins based on binary digits
   while(1) // while user's turn {

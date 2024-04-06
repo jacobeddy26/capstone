@@ -148,7 +148,7 @@ Piece chessboard[BOARD_SIZE][BOARD_SIZE];
 #define boardSA 2                                // Slave Address for Board/LCD controller
 #define engineSA 1                               // Slave Address for Chess Engine controller
 
-char bestMove[5] = {0}; // Initialize best move globally
+char bestMove[5] = "e2e4\0"; // Initialize best move globally
 char inputMove[5] = "none\0";
 char outputMove[6];
 
@@ -173,7 +173,11 @@ void setup(){
    lastH[0] = 0;
    pinMode(13, OUTPUT);
 
-   setup_menu(isWhiteSelected);
+   setup_menu();
+   if (isWhiteSelected==false)
+   {
+      strcpy(bestMove,"c7c5\0");
+   }
    setup_board();
 }
 
@@ -685,138 +689,138 @@ void status_coord(int x, int y, const __FlashStringHelper *msg) {
    tft.print(msg);
 }
 
-void setup_menu(bool isWhiteSelected) {
+void setup_menu() {
     
-    // button dimensions (makes it easier to read/edit where they're drawn below)
-    #define BUTTON_X 120
-    #define BUTTON_Y 50
-    #define BUTTON_W 100
-    #define BUTTON_H 30
-    #define BUTTON_SPACING_X 10
-    #define BUTTON_SPACING_Y 10
-    #define BUTTON_TEXTSIZE 2
+   // button dimensions (makes it easier to read/edit where they're drawn below)
+   #define BUTTON_X 120
+   #define BUTTON_Y 50
+   #define BUTTON_W 100
+   #define BUTTON_H 30
+   #define BUTTON_SPACING_X 10
+   #define BUTTON_SPACING_Y 10
+   #define BUTTON_TEXTSIZE 2
 
-    tft.fillScreen(BLACK);
+   tft.fillScreen(BLACK);
 
-    status(F("Select side:"));
+   status(F("Select side:"));
 
-    // Draw new buttons
-    for (uint8_t row = 0; row < 2; row++) {
-        for (uint8_t col = 0; col < 1; col++) {
-            side_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
-                BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y), // x, y, w, h, outline, fill, text
-                BUTTON_W, BUTTON_H, ILI9341_WHITE, sidecolors[col + row], ILI9341_WHITE,
-                sidelabels[col + row], BUTTON_TEXTSIZE);
-            side_choice[col + row].drawButton();
-        }
-    }
+   // Draw new buttons
+   for (uint8_t row = 0; row < 2; row++) {
+      for (uint8_t col = 0; col < 1; col++) {
+         side_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+            BUTTON_Y+row*(BUTTON_H+BUTTON_SPACING_Y), // x, y, w, h, outline, fill, text
+            BUTTON_W, BUTTON_H, ILI9341_WHITE, sidecolors[col + row], ILI9341_WHITE,
+            sidelabels[col + row], BUTTON_TEXTSIZE);
+         side_choice[col + row].drawButton();
+      }
+   }
     
-    status_coord(10, 120, F("Select difficulty:"));
+   status_coord(10, 120, F("Select difficulty:"));
 
-    for (uint8_t row = 0; row < 3; row++) {
-        for (uint8_t col = 0; col < 1; col++) {
-            diff_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
-                160+row*(BUTTON_H+BUTTON_SPACING_Y), BUTTON_W, BUTTON_H,
-                ILI9341_WHITE,  diffcolors[col + row], ILI9341_WHITE,
-                difflabels[col + row], BUTTON_TEXTSIZE);
-            diff_choice[col + row].drawButton();
-        }
-    }
+   for (uint8_t row = 0; row < 3; row++) {
+      for (uint8_t col = 0; col < 1; col++) {
+         diff_choice[col + row].initButton(&tft, BUTTON_X+col*(BUTTON_W+BUTTON_SPACING_X), 
+            160+row*(BUTTON_H+BUTTON_SPACING_Y), BUTTON_W, BUTTON_H,
+            ILI9341_WHITE,  diffcolors[col + row], ILI9341_WHITE,
+            difflabels[col + row], BUTTON_TEXTSIZE);
+         diff_choice[col + row].drawButton();
+      }
+   }
 
-    confirm.initButton(&tft, BUTTON_X, 300, BUTTON_W, BUTTON_H,
-                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Done", BUTTON_TEXTSIZE); 
-    confirm.drawButton();
+   confirm.initButton(&tft, BUTTON_X, 300, BUTTON_W, BUTTON_H,
+               ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Done", BUTTON_TEXTSIZE); 
+   confirm.drawButton();
 
-    if(isWhiteSelected) {
-        side_choice[0].drawButton(true);  // draw inverted version of button
-        side_choice[1].drawButton(false);
-    } else {
-        side_choice[0].drawButton(false);  // draw inverted version of button
-        side_choice[1].drawButton(true);
-    }
+   if(isWhiteSelected) {
+      side_choice[0].drawButton(true);  // draw inverted version of button
+      side_choice[1].drawButton(false);
+   } else {
+      side_choice[0].drawButton(false);  // draw inverted version of button
+      side_choice[1].drawButton(true);
+   }
 
-    if (T==0x01) {
-        diff_choice[0].drawButton(true);  // draw inverted version of button
-        diff_choice[1].drawButton(false); // make sure other buttons revert to original color
-        diff_choice[2].drawButton(false);
-    } else if (T==0x20) {
-        diff_choice[0].drawButton(false);  // draw inverted version of button
-        diff_choice[1].drawButton(true); // make sure other buttons revert to original color
-        diff_choice[2].drawButton(false);
-    } else if (T==0x3F) {
-        diff_choice[0].drawButton(false);  // draw inverted version of button
-        diff_choice[1].drawButton(false);  // make sure other buttons revert to original color
-        diff_choice[2].drawButton(true);
-    } else {
-        diff_choice[0].drawButton(false);  // draw inverted version of button
-        diff_choice[1].drawButton(false);  // make sure other buttons revert to original color
-        diff_choice[2].drawButton(false);
-    }
+   if (T==0x01) {
+      diff_choice[0].drawButton(true);  // draw inverted version of button
+      diff_choice[1].drawButton(false); // make sure other buttons revert to original color
+      diff_choice[2].drawButton(false);
+   } else if (T==0x20) {
+      diff_choice[0].drawButton(false);  // draw inverted version of button
+      diff_choice[1].drawButton(true); // make sure other buttons revert to original color
+      diff_choice[2].drawButton(false);
+   } else if (T==0x3F) {
+      diff_choice[0].drawButton(false);  // draw inverted version of button
+      diff_choice[1].drawButton(false);  // make sure other buttons revert to original color
+      diff_choice[2].drawButton(true);
+   } else {
+      diff_choice[0].drawButton(false);  // draw inverted version of button
+      diff_choice[1].drawButton(false);  // make sure other buttons revert to original color
+      diff_choice[2].drawButton(false);
+   }
      
-    while(true) {
-        // Listen for touchscreen input
-        TSPoint p = ts.getPoint();
-        pinMode(XM, OUTPUT);
-        pinMode(YP, OUTPUT);
+   while(true) {
+      // Listen for touchscreen input
+      TSPoint p = ts.getPoint();
+      pinMode(XM, OUTPUT);
+      pinMode(YP, OUTPUT);
 
-        // Check if the touch input is detected
-        if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
-            // Normalize the touch coordinates
-            p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
-            if (isWhiteSelected)
-            {
-                p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
-            } else {
-                p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
-            }
+      // Check if the touch input is detected
+      if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+         // Normalize the touch coordinates
+         p.x = map(p.x, TS_MINX, TS_MAXX, tft.width(), 0);
+         if (isWhiteSelected)
+         {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
+         } else {
+            p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
+         }
             
-            if (side_choice[0].contains(p.x, p.y)) {    // white
-                k=16;
-                tft.fillScreen(BLACK);
-                tft.setRotation(2);
+         if (side_choice[0].contains(p.x, p.y)) {    // white
+            k=16;
+            isWhiteSelected=true;
+            tft.fillScreen(BLACK);
+            tft.setRotation(2);
 
-                side_choice[0].drawButton(true);  // draw inverted version of button
-                side_choice[1].drawButton(false); // make sure other button reverts to original color
-                isWhiteSelected=true;
-                setup_menu(isWhiteSelected);
-                return;
-            } else if (side_choice[1].contains(p.x, p.y)) {     // black
-                k^=24;
-                tft.fillScreen(BLACK);
-                tft.setRotation(0);
+            side_choice[0].drawButton(true);  // draw inverted version of button
+            side_choice[1].drawButton(false); // make sure other button reverts to original color
+            setup_menu();
+            return;
+         } else if (side_choice[1].contains(p.x, p.y)) {     // black
+            k^=24;
+            isWhiteSelected=false;
+            tft.fillScreen(BLACK);
+            tft.setRotation(0);
 
-                side_choice[1].drawButton(true);  // draw inverted version of button
-                side_choice[0].drawButton(false); // make sure other button reverts to original color
-                isWhiteSelected=false;
-                setup_menu(isWhiteSelected);
-                return;
-            }
+            side_choice[1].drawButton(true);  // draw inverted version of button
+            side_choice[0].drawButton(false); // make sure other button reverts to original color
+            setup_menu();
+            return;
+         }
 
-            if (diff_choice[0].contains(p.x, p.y)) {
-                T = 0x01;  // easy
-                diff_choice[0].drawButton(true);  // draw inverted version of button
-                diff_choice[1].drawButton(false); // make sure other buttons revert to original color
-                diff_choice[2].drawButton(false);
-            } else if (diff_choice[1].contains(p.x, p.y)) {
-                T = 0x20; // medium
-                diff_choice[1].drawButton(true);  // draw inverted version of button
-                diff_choice[0].drawButton(false); // make sure other buttons revert to original color
-                diff_choice[2].drawButton(false);
-            } else if (diff_choice[2].contains(p.x, p.y)) {
-                T = 0x3F; // hard
-                diff_choice[2].drawButton(true);  // draw inverted version of button
-                diff_choice[0].drawButton(false); // make sure other buttons revert to original color
-                diff_choice[1].drawButton(false);
-            }
+         if (diff_choice[0].contains(p.x, p.y)) {
+            T = 0x01;  // easy
+            diff_choice[0].drawButton(true);  // draw inverted version of button
+            diff_choice[1].drawButton(false); // make sure other buttons revert to original color
+            diff_choice[2].drawButton(false);
+         } else if (diff_choice[1].contains(p.x, p.y)) {
+            T = 0x20; // medium
+            diff_choice[1].drawButton(true);  // draw inverted version of button
+            diff_choice[0].drawButton(false); // make sure other buttons revert to original color
+            diff_choice[2].drawButton(false);
+         } else if (diff_choice[2].contains(p.x, p.y)) {
+            T = 0x3F; // hard
+            diff_choice[2].drawButton(true);  // draw inverted version of button
+            diff_choice[0].drawButton(false); // make sure other buttons revert to original color
+            diff_choice[1].drawButton(false);
+         }
 
-            if (confirm.contains(p.x, p.y)) {
-                // Handle confirm button press
-                confirm.drawButton(true); // Invert the button
-                confirm.drawButton(false);
-                return; // Exit the function to prevent further processing
-            }
-        }
-    }
+         if (confirm.contains(p.x, p.y)) {
+            // Handle confirm button press
+            confirm.drawButton(true); // Invert the button
+            confirm.drawButton(false);
+            return; // Exit the function to prevent further processing
+         }
+      }
+   }
    Wire.beginTransmission(boardSA);
    Wire.write(k);          // Transmit playing side
    Wire.endTransmission();
@@ -830,14 +834,14 @@ void setup_board() {
    // button dimensions (makes it easier to read/edit where they're drawn below)
    #define BUTTON_X 120
    #define BUTTON_Y 50
-   #define BUTTON_W 80
+   #define BUTTON_W 100
    #define BUTTON_H 30
    #define BUTTON_SPACING_X 10
    #define BUTTON_SPACING_Y 10
    #define BUTTON_TEXTSIZE 2
 
    confirm.initButton(&tft, BUTTON_X, 200, BUTTON_W, BUTTON_H,
-                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", 2); 
+                  ILI9341_WHITE, ILI9341_BLACK, ILI9341_WHITE, "Confirm", BUTTON_TEXTSIZE); 
                   // x, y, w, h, outline, fill, text
    confirm.drawButton();
    bool confirmed = false;
@@ -858,11 +862,11 @@ void setup_board() {
          } else {
             p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
          }      
-      }
 
-      if(confirm.contains(p.x, p.y)) {
-         confirmed = true;
-         confirm.drawButton(true);  // draw inverted version of buttons
+         if(confirm.contains(p.x, p.y)) {
+            confirmed = true;
+            confirm.drawButton(true);  // draw inverted version of buttons
+         }
       }
    }
   tft.fillScreen(BLACK);
@@ -1075,36 +1079,27 @@ void forfeit_confirm() {
             p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
          } else {
             p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
-         }      
-      }
+         }  
 
-      if (yn[0].contains(p.x, p.y)) { // forfeit confirmed
-         yn[0].drawButton(true); // invert button colors
-         decided = true;
-         tft.fillScreen(BLACK);
-         // call game over screen
-         game_over();
-      }
-      if (yn[1].contains(p.x, p.y)) { // forfeit denied
-         yn[1].drawButton(true); // invert button colors
-         decided = true;
-         tft.fillScreen(BLACK);
-         user_forfeit = false;
-         loop();
+         if (yn[0].contains(p.x, p.y)) { // forfeit confirmed
+            yn[0].drawButton(true); // invert button colors
+            decided = true;
+            tft.fillScreen(BLACK);
+            // call game over screen
+            game_over();
+         }
+         if (yn[1].contains(p.x, p.y)) { // forfeit denied
+            yn[1].drawButton(true); // invert button colors
+            decided = true;
+            tft.fillScreen(BLACK);
+            user_forfeit = false;
+            loop();
+         }    
       }
    }
-  
 }
 
 void ingame_menu() {
-  
-   if(hints_on) { // corrects hint button color if returning to menu from another screen
-      ingame[0].drawButton(true);  // draw inverted version of button
-   }
-   if(possible_moves_on) {
-      ingame[1].drawButton(true);
-   }
-
    if(!user_forfeit) {
 
       digitalWrite(13, HIGH);
@@ -1121,47 +1116,55 @@ void ingame_menu() {
             p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, tft.height(), 0));
          } else {
             p.y = (tft.height()-map(p.y, TS_MINY, TS_MAXY, 0, tft.height()));
-         }      
-      }
-     
-      if(ingame[0].justReleased()) { // makes it only redraw if button was just released (will flash otherwise)
-         if(hints_on) {
-            ingame[0].drawButton(true);  // draw inverted version of button
-         } else {
-            ingame[0].drawButton(false); // draw regular button
-         }
-      }
+         }   
 
-      if(ingame[1].justReleased()) {
-         if(possible_moves_on) {
-            ingame[1].drawButton(true);  // draw inverted version of button
-            //print_possible_moves(1, 0, KNIGHT, WHITE, true, true);  //Knight at b1
-         } else {
-            ingame[1].drawButton(false); // draw regular button
-         }
-      }   
+         if(ingame[0].justReleased()) { // makes it only redraw if button was just released (will flash otherwise)
+            if(hints_on) {
+               ingame[0].drawButton(true);  // draw inverted version of button
+            } else {
+               ingame[0].drawButton(false); // draw regular button
+            }
+         } 
 
-      if (ingame[0].contains(p.x, p.y)) {
-         ingame[0].press(true);  // tell the button it is pressed
-         hints_on = !hints_on; // toggle hint variable
-         user_hint(bestMove);
-         delay(100);
-      } else if (ingame[1].contains(p.x, p.y)) {
-         ingame[1].press(true);  // tell the button it is pressed
-         possible_moves_on = !possible_moves_on; // toggle possible moves variable
-         delay(100);
-      } else if (ingame[2].contains(p.x, p.y)) {
-         ingame[2].press(true);  // tell the button it is pressed
-         ingame[2].drawButton(true);  // draw inverted version of button
-         user_forfeit = true;
-         delay(100); //time for user to see button invert
-         tft.fillScreen(BLACK);
-         forfeit_confirm();
+         if(ingame[1].justReleased()) {
+            if(possible_moves_on) {
+               ingame[1].drawButton(true);  // draw inverted version of button
+               //print_possible_moves(1, 0, KNIGHT, WHITE, true, true);  //Knight at b1
+            } else {
+               ingame[1].drawButton(false); // draw regular button
+            }
+         }   
+
+         if (ingame[0].contains(p.x, p.y)) {
+            ingame[0].press(true);  // tell the button it is pressed
+            ingame[0].drawButton(true);
+            hints_on = !hints_on; // toggle hint variable
+            user_hint(bestMove);
+            ingame[0].drawButton(false);
+         } else if (ingame[1].contains(p.x, p.y)) {
+            ingame[1].press(true);  // tell the button it is pressed
+            ingame[1].drawButton(true);
+            possible_moves_on = !possible_moves_on; // toggle possible moves variable
+            delay(1000);
+            ingame[1].drawButton(false);
+         } else if (ingame[2].contains(p.x, p.y)) {
+            ingame[2].press(true);  // tell the button it is pressed
+            ingame[2].drawButton(true);  // draw inverted version of button
+            user_forfeit = true;
+            delay(1000); //time for user to see button invert
+            ingame[2].drawButton(false);
+            tft.fillScreen(BLACK);
+            forfeit_confirm();
+         } else { // in testing, this seemed necessary for delay in this particular case, idk why
+            ingame[0].press(false);
+            ingame[1].press(false);
+            ingame[2].press(false);
+         } 
       } else { // in testing, this seemed necessary for delay in this particular case, idk why
          ingame[0].press(false);
          ingame[1].press(false);
          ingame[2].press(false);
-      }
+      } 
    }
 }
 
@@ -1312,8 +1315,7 @@ void light_possible_move(char possible_move[2]) {
   Serial.print("Dst: ");
     Serial.print((int)d5dst); Serial.print((int)d4dst);
     Serial.print((int)d3dst); Serial.print((int)d2dst);
-    Serial.print((int)d1dst); Serial.print((int)d0dst);
-    Serial.print('\n');
+    Serial.print((int)d1dst); Serial.println((int)d0dst);
 /*
   //loop to power pins based on binary digits
   while(hints_on) // while user's turn {
@@ -1336,19 +1338,15 @@ void user_hint(char best_move[5]) {
    square_conv_dst(best_move[2], best_move[3]);
 
    //test loop printing resulting binary to serial monitor
-   Serial.print("Testing "); Serial.print(best_move);
-   Serial.print('\n');
+   Serial.print("Testing "); Serial.println(best_move);
    Serial.print("Src: ");
    Serial.print((int)d5src); Serial.print((int)d4src);
    Serial.print((int)d3src); Serial.print((int)d2src);
-   Serial.print((int)d1src); Serial.print((int)d0src);
-   Serial.print('\n');
+   Serial.print((int)d1src); Serial.println((int)d0src);
    Serial.print("Dst: ");
    Serial.print((int)d5dst); Serial.print((int)d4dst);
    Serial.print((int)d3dst); Serial.print((int)d2dst);
-   Serial.print((int)d1dst); Serial.print((int)d0dst);
-   Serial.print('\n');
-   delay(1000);
+   Serial.print((int)d1dst); Serial.println((int)d0dst);
 
 /*   loop to power pins based on binary digits
    while(hints_on) // while user's turn {
@@ -1367,6 +1365,7 @@ void user_hint(char best_move[5]) {
       if(d0dst) dp0 = HIGH; else dp0 = LOW;
    }
 */
+   delay(1000);
 }
 
 //converts source square to binary (changes global variables)
