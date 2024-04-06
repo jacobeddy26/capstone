@@ -1328,10 +1328,10 @@ void light_possible_move(char possible_move[2]) {
 void user_hint(char best_move[5]) {
    if (best_move[0] == '\0' && isWhiteSelected == false)
    {
-      strcpy(best_move,"c7c5\0");
+      strcpy(best_move,"c7c5\0");   // Sicilian Defense
    } else if (best_move[0] == '\0' && isWhiteSelected == true)
    {
-      strcpy(best_move,"e2e4\0");
+      strcpy(best_move,"e2e4\0");   // Most popular openers begin with this move
    }
    
    //separate functions that do the same thing - could easily be condensed if
