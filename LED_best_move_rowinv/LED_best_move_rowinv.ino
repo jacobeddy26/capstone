@@ -58,13 +58,11 @@ void user_hint(char best_move[4]) {
     Serial.print("Src: ");
     Serial.print((int)d5src); Serial.print((int)d4src);
     Serial.print((int)d3src); Serial.print((int)d2src);
-    Serial.print((int)d1src); Serial.print((int)d0src);
-    Serial.print('\n');
+    Serial.print((int)d1src); Serial.println((int)d0src);
     Serial.print("Dst: ");
     Serial.print((int)d5dst); Serial.print((int)d4dst);
     Serial.print((int)d3dst); Serial.print((int)d2dst);
-    Serial.print((int)d1dst); Serial.print((int)d0dst);
-    Serial.print('\n');
+    Serial.print((int)d1dst); Serial.println((int)d0dst);
     delay(1000);
   }
 /*
