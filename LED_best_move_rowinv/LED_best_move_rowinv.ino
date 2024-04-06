@@ -3,7 +3,7 @@ bool d5src, d4src, d3src, d2src, d1src, d0src;
 bool d5dst, d4dst, d3dst, d2dst, d1dst, d0dst;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   //hardcoded square ID for testing only
   //(this and the function call
   // together perform the function of the chess engine)
