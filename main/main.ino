@@ -1372,17 +1372,17 @@ void user_hint(char best_move[5]) {
 //converts source square to binary (changes global variables)
 void square_conv_src (char let, char num) {
   if(num == '5' | num == '6' | num == '7' | num == '8')
-    d5src = true;
-  else
     d5src = false;
+  else
+    d5src = true;
   if(num == '3' | num == '4' | num == '7' | num == '8')
-    d4src = true;
-  else
     d4src = false;
-  if(num == '2' | num == '4' | num == '6' | num == '8')
-    d3src = true;
   else
+    d4src = true;
+  if(num == '2' | num == '4' | num == '6' | num == '8')
     d3src = false;
+  else
+    d3src = true;
   if(let == 'e' | let == 'f' | let == 'g' | let == 'h')
     d2src = true;
   else
@@ -1400,17 +1400,17 @@ void square_conv_src (char let, char num) {
 //converts destination square to binary (changes global variables)
 void square_conv_dst (char let, char num) {
   if(num == '5' | num == '6' | num == '7' | num == '8')
-    d5dst = true;
-  else
     d5dst = false;
+  else
+    d5dst = true;
   if(num == '3' | num == '4' | num == '7' | num == '8')
-    d4dst = true;
-  else
     d4dst = false;
-  if(num == '2' | num == '4' | num == '6' | num == '8')
-    d3dst = true;
   else
+    d4dst = true;
+  if(num == '2' | num == '4' | num == '6' | num == '8')
     d3dst = false;
+  else
+    d3dst = true;
   if(let == 'e' | let == 'f' | let == 'g' | let == 'h')
     d2dst = true;
   else
