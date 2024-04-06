@@ -308,17 +308,33 @@ void UpdateBoardPosition(int PieceWasHere, int PieceMovedHere,int AnotherPieceWa
     
     MoveMessage=Encoder[PieceWasHere]+Encoder[PieceMovedHere];
   }
-   char userMove[5];
-   for(int i = 0; i < 4; i++) {
+  
+  if (isWhiteSelected && (NumberOfMovesMade%2)==0) {
+    char userMove[5];
+    for(int i = 0; i < 4; i++) {
       userMove[i] = MoveMessage.charAt(i);
-   }
-   userMove[4]='\0';
-   if(MoveMessage.compareTo("")!=0) {
+    }
+    userMove[4]='\0';
+    if(MoveMessage.compareTo("")!=0) {
       Serial.println(userMove);
       Wire.beginTransmission(engineSA);
       Wire.write(userMove,5);
       Wire.endTransmission();
-   }
+    }  
+  } else if (!isWhiteSelected && (NumberOfMovesMade%2)!=0)
+  {
+    char userMove[5];
+    for(int i = 0; i < 4; i++) {
+      userMove[i] = MoveMessage.charAt(i);
+    }
+    userMove[4]='\0';
+    if(MoveMessage.compareTo("")!=0) {
+      Serial.println(userMove);
+      Wire.beginTransmission(engineSA);
+      Wire.write(userMove,5);
+      Wire.endTransmission();
+    } 
+  }
 }
 
 void tcaselect(uint8_t i) 
@@ -346,22 +362,21 @@ void receiveEvent() {
 }
 
 void promote(bool flagWhite, bool flagBlack) {
-    if(flagWhite)
-    {
-      //send Piece Promotion Flag for White Pieces
-      promoteFlag = 1000;
-      Serial.println("White is Promoting!");
-    }
-    else if(flagBlack) {
-      //Send Piece Promotion Flag for Black Pieces
-      promoteFlag = 1001;
-      Serial.println("Black is Promoting!");
-    }
-    Wire.beginTransmission(engineSA);
-    Wire.write(promoteFlag);
-    Wire.endTransmission();
-    promoteBlack=false;
-    promoteWhite=false;
+  if(flagWhite)
+  {
+    //send Piece Promotion Flag for White Pieces
+    promoteFlag = 1000;
+    Serial.println("White is Promoting!");
+  } else if(flagBlack) {
+    //Send Piece Promotion Flag for Black Pieces
+    promoteFlag = 1001;
+    Serial.println("Black is Promoting!");
+  }
+  Wire.beginTransmission(engineSA);
+  Wire.write(promoteFlag);
+  Wire.endTransmission();
+  promoteBlack=false;
+  promoteWhite=false;
 }
 
 void selectedPiece(int piece) {
