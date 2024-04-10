@@ -26,9 +26,6 @@ AccelStepper Outer(1,5,4); //Outer motor with stepPin 5 and dirPin 4
 #define actNeg 9
 #define mag 12    
 
-// Define move received from I2C
-char receivedMove[6];
-
 // Define source and destination squares from received move i.e. "a2b3" = "a2" & "b3"
 char src[3], dest[3];
 
@@ -144,42 +141,38 @@ void setup() {
     }
   }
 
-  long innerFirstAngle = 0, outerFirstAngle = 0;
-  long innerSecondAngle = 0, outerSecondAngle = 0;
-
   Inner.setMaxSpeed(90);
   Inner.setAcceleration(30);
   Outer.setMaxSpeed(90);
   Outer.setAcceleration(30);
-
 }
 
 void loop() {
-  
+
 }
 
 void pickUpAt(int innerAngle, int outerAngle) {
   
-  int innerSteps = -2.88*innerAngle;
+  long innerSteps = -2.88*innerAngle;
+  //Serial.println(innerSteps);
   if (innerSteps>0) {
     Inner.move(innerSteps);
-  }
-  else {
+  } else {
     Inner.move(innerSteps);
   }
-
-  int outerSteps = -2.88*outerAngle;
+  long outerSteps = -2.88*outerAngle;
+  //Serial.println(outerSteps);
   if (outerSteps>0) {
     Outer.move(outerSteps);
-  }
-  else {
+  } else {
     Outer.move(outerSteps);
   }
-
+delay(2000);
   while(Outer.currentPosition() != Outer.targetPosition()) {
-    Outer.run();
+   Serial.println(Outer.currentPosition());
+   Outer.runSpeed();
   }
-
+/*
   while(Inner.currentPosition() != Inner.targetPosition()) {
     Inner.run();
   }
@@ -193,11 +186,13 @@ void pickUpAt(int innerAngle, int outerAngle) {
   digitalWrite(actNeg, HIGH);
   delay(5000);
   holding = 1;
+  */
 }
 
 void putDownAt(int innerAngle, int outerAngle) {
+   //Serial.println("Put Down");
   
-  int innerSteps = -2.88*innerAngle;
+  int innerSteps = (int)(-2.88*innerAngle);
   if (innerSteps>0) {
     Inner.move(innerSteps);
   }
@@ -205,7 +200,7 @@ void putDownAt(int innerAngle, int outerAngle) {
     Inner.move(innerSteps);
   }
 
-  int outerSteps = -2.88*outerAngle;
+  int outerSteps = (int)(-2.88*outerAngle);
   if (outerSteps>0) {
     Outer.move(outerSteps);
   }
@@ -239,36 +234,30 @@ void parseChessMove(char move[6]) {
    src[1] = move[2];  // Source column i.e. 1-8
    dest[0] = move[3]; // Destination row
    dest[1] = move[4]; // Destiantion column
-   /*
-   Serial.print(src[0]);
-   Serial.print(src[1]);
-   Serial.print(dest[0]);
-   Serial.println(dest[1]);
-   */
 }
 
 // Function to receive data over I2C
 void receiveEvent() {
+   // Define move received from I2C
+   char receivedMove[6];
    int i = 0;
    while (Wire.available() && i < 6) {
       receivedMove[i] = Wire.read(); // Read char data
       i++;
    }
    receivedMove[5] = '\0'; // Null-terminate the received char array
-   Serial.print("Received move: ");
-   Serial.println(receivedMove); // Print received data to serial monitor
-
+   //Serial .print("Received move: ");
+   //Serial.println(receivedMove); // Print received data to serial monitor
+   parseChessMove(receivedMove);
    if (receivedMove[0] == 'o') {
       // Castle
       Serial.println("Castle");
    } else if (receivedMove[0] == 'x') {
       // Capture
       Serial.println("Capture");
-      // parseChessMove()
       // removeCapture()
    } else {
       // Normal
-      parseChessMove(receivedMove);
       makeMove();
    }
 }
@@ -281,7 +270,7 @@ void makeMove() {
 
   ChessboardSquare &srcSquare = board.getSquare(srcX,srcY);   // Source Square Info
   ChessboardSquare &destSquare = board.getSquare(destX,destY);  // Dest Square Info
-
+/*
   Serial.print("Source Square ");
   Serial.print(srcSquare.getName());
   Serial.print(": theta1 = ");
@@ -294,11 +283,11 @@ void makeMove() {
   Serial.print(destSquare.getTheta1());
   Serial.print(", theta2 = ");
   Serial.println(destSquare.getTheta2());
-  
-  long innerFirstAngle = 0;
-  long outerFirstAngle = 0;
-  long innerSecondAngle = 0;
-  long outerSecondAngle = 0;
+ */
+  double innerFirstAngle = 0;
+  double outerFirstAngle = 0;
+  double innerSecondAngle = 0;
+  double outerSecondAngle = 0;
 
   innerFirstAngle = srcSquare.getTheta1();
   outerFirstAngle = srcSquare.getTheta2();
@@ -308,9 +297,9 @@ void makeMove() {
   if (innerFirstAngle != 0) {
     pickUpAt(innerFirstAngle,outerFirstAngle);
   }
-
-  long innerPlaceAngle = innerSecondAngle - innerFirstAngle;
-  long outerPlaceAngle = innerSecondAngle - innerFirstAngle;
+/*
+  double innerPlaceAngle = innerSecondAngle - innerFirstAngle;
+  double outerPlaceAngle = innerSecondAngle - innerFirstAngle;
 
   if (innerPlaceAngle != 0) {
     putDownAt(innerPlaceAngle,outerPlaceAngle);
@@ -348,4 +337,5 @@ void makeMove() {
   outerFirstAngle = 0;
   innerSecondAngle = 0;
   outerSecondAngle = 0;
+  */
 }

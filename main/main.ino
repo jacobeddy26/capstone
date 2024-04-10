@@ -175,6 +175,8 @@ void setup(){
 
    setup_menu();
    setup_board();
+   Serial.print("k:");
+   Serial.println(k);
 }
 
 void loop(){
@@ -333,6 +335,7 @@ void takeMove(){
 
       if (inputMove[0] != 'n')
       {
+         Serial.println("Move Received!!");
          strcpy(c,inputMove);
          strcpy(inputMove,"none\0");
          moveReceived=false;

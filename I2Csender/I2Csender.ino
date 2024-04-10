@@ -1,4 +1,4 @@
-#include "Wire.h"
+#include <Wire.h>
 
 #define engineSA 1   // Slave Address for the chess engine controller
 #define boardSA 2    // Slave Address for the board/LCD controller
@@ -23,20 +23,20 @@ void loop()
       Serial.println(inputString);
    }
 
-   char userMove[5];
-   //char userMove[6];
+   //char userMove[5];
+   char userMove[6];
    for(int i = 0; i < 5; i++) {
       userMove[i] = inputString.charAt(i);
    }
-   userMove[4]='\0';
-   //userMove[5]='\0';
+   //userMove[4]='\0';
+   userMove[5]='\0';
    if(inputString.compareTo("none")!=0) {
       Serial.print("Sending move: ");
       Serial.println(userMove);
-      Wire.beginTransmission(engineSA);
-      //Wire.beginTransmission(scaraSA);
-      Wire.write(userMove,5);
-      //Wire.write(userMove,6);
+      //Wire.beginTransmission(engineSA);
+      Wire.beginTransmission(scaraSA);
+      //Wire.write(userMove,5);
+      Wire.write(userMove,6);
       Wire.endTransmission();
    }
 }
