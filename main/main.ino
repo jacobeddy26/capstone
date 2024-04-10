@@ -231,15 +231,21 @@ void loop(){
       // Throw a flag if the calculated move is a capture or castle
       if (isCapture) {                             // Set flag for capture
          outputMove[0]='x';
+         Serial.print("Computer Move: ");
+         Serial.println(outputMove);
          Wire.beginTransmission(scaraSA);          // Transmit capture move
          Wire.write(outputMove,6); 
          Wire.endTransmission();                             
       } else if (isCastle) {                       // Set flag for castle
          outputMove[0]='o';
+         Serial.print("Computer Move: ");
+         Serial.println(outputMove);
          Wire.beginTransmission(scaraSA);          // Transmit castle move
          Wire.write(outputMove,6); 
          Wire.endTransmission();                   
       } else {
+         Serial.print("Computer Move: ");
+         Serial.println(outputMove);
          Wire.beginTransmission(scaraSA);          // Transmit normal move
          Wire.write(outputMove,6); 
          Wire.endTransmission();
