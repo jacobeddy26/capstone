@@ -33,8 +33,6 @@ char receivedMove[6];
 char src[3], dest[3];
 
 int switchValue1 = 0, switchValue2 = 0;
-long innerFirstAngle = 143, outerFirstAngle = 36;
-long innerSecondAngle = 156, outerSecondAngle = 30;
 int holding=0;
 
 // Define struct scaraAngle
@@ -97,14 +95,14 @@ public:
 // Hardcoded names and angle values for each chessboard position
 
 const scaraAngle hardcodedAngles[8][8][3] = {
-   {{"a1", 1.0, 1.0}, {"a2", 8.0, 2.0}, {"a3", 8.0, 3.0}, {"a4", 8.0, 4.0}, {"a5", 8.0, 5.0}, {"a6", 8.0, 6.0}, {"a7", 8.0, 7.0}, {"a8", 8.0, 8.0}},
-   {{"b1", 7.0, 1.0}, {"b2", 7.0, 2.0}, {"b3", 7.0, 3.0}, {"b4", 7.0, 4.0}, {"b5", 7.0, 5.0}, {"b6", 7.0, 6.0}, {"b7", 7.0, 7.0}, {"b8", 7.0, 8.0}},   
-   {{"c1", 6.0, 1.0}, {"c2", 6.0, 2.0}, {"c3", 6.0, 3.0}, {"c4", 6.0, 4.0}, {"c5", 6.0, 5.0}, {"c6", 6.0, 6.0}, {"c7", 6.0, 7.0}, {"c8", 6.0, 8.0}},
-   {{"d1", 5.0, 1.0}, {"d2", 5.0, 2.0}, {"d3", 5.0, 3.0}, {"d4", 5.0, 4.0}, {"d5", 5.0, 5.0}, {"d6", 5.0, 6.0}, {"d7", 5.0, 7.0}, {"d8", 5.0, 8.0}},
-   {{"e1", 4.0, 1.0}, {"e2", 4.0, 2.0}, {"e3", 4.0, 3.0}, {"e4", 4.0, 4.0}, {"e5", 4.0, 5.0}, {"e6", 4.0, 6.0}, {"e7", 4.0, 7.0}, {"e8", 4.0, 8.0}},
-   {{"f1", 3.0, 1.0}, {"f2", 3.0, 2.0}, {"f3", 3.0, 3.0}, {"f4", 3.0, 4.0}, {"f5", 3.0, 5.0}, {"f6", 3.0, 6.0}, {"f7", 3.0, 7.0}, {"f8", 3.0, 8.0}},
-   {{"g1", 2.0, 1.0}, {"g2", 2.0, 2.0}, {"g3", 2.0, 3.0}, {"g4", 2.0, 4.0}, {"g5", 2.0, 5.0}, {"g6", 2.0, 6.0}, {"g7", 2.0, 7.0}, {"g8", 2.0, 8.0}},
-   {{"h1", 1.0, 1.0}, {"h2", 1.0, 2.0}, {"h3", 1.0, 3.0}, {"h4", 1.0, 4.0}, {"h5", 1.0, 5.0}, {"h6", 1.0, 6.0}, {"h7", 1.0, 7.0}, {"h8", 1.0, 1.0}}
+   {{"a1", 114.0, 21.0}, {"a2", 127.0, 9.0}, {"a3", 158.0, 5.0}, {"a4", 183.0, 11.0}, {"a5", 8.0, 5.0}, {"a6", 8.0, 6.0}, {"a7", 8.0, 7.0}, {"a8", 252.0, 16.0}},
+   {{"b1", 122.0, 27.0}, {"b2", 138.0, 15.0}, {"b3", 158.0, 8.0}, {"b4", 183.0, 3.0}, {"b5", 206.0, 3.0}, {"b6", 221.0, 8.0}, {"b7", 227.0, 14.0}, {"b8", 233.0, 24.0}},   
+   {{"c1", 127.0, 35.0}, {"c2", 144.0, 24.0}, {"c3", 156.0, 19.0}, {"c4", 174.0, 16.0}, {"c5", 204.0, 19.0}, {"c6", 204.0, 18.0}, {"c7", 213.0, 24.0}, {"c8", 218.0, 33.0}},
+   {{"d1", 130.0, 43.0}, {"d2", 143.0, 36.0}, {"d3", 156.0, 30.0}, {"d4", 169.0, 29.0}, {"d5", 194.0, 29.0}, {"d6", 194.0, 30.0}, {"d7", 200.0, 36.0}, {"d8", 205.0, 42.0}},
+   {{"e1", 130.0, 55.0}, {"e2", 141.0, 49.0}, {"e3", 153.0, 43.0}, {"e4", 164.0, 41.0}, {"e5", 174.0, 41.0}, {"e6", 184.0, 42.0}, {"e7", 189.0, 48.0}, {"e8", 194.0, 55.0}},
+   {{"f1", 126.0, 69.0}, {"f2", 138.0, 62.0}, {"f3", 148.0, 56.0}, {"f4", 158.0, 53.0}, {"f5", 167.0, 53.0}, {"f6", 174.0, 56.0}, {"f7", 178.0, 61.0}, {"f8", 182.0, 69.0}},
+   {{"g1", 122.0, 85.0}, {"g2", 132.0, 78.0}, {"g3", 142.0, 74.0}, {"g4", 151.0, 72.0}, {"g5", 157.0, 71.0}, {"g6", 164.0, 74.0}, {"g7", 167.0, 76.0}, {"g8", 170.0, 85.0}},
+   {{"h1", 113.0, 108.0}, {"h2", 125.0, 97.0}, {"h3", 132.0, 94.0}, {"h4", 141.0, 89.0}, {"h5", 146.0, 92.0}, {"h6", 152.0, 94.0}, {"h7", 154.0, 101.0}, {"h8", 157.0, 107.0}}
 };
 
 Chessboard board(hardcodedAngles);
@@ -146,8 +144,8 @@ void setup() {
     }
   }
 
-  long innerFirstAngle = 100, outerFirstAngle = 20;
-  long innerSecondAngle = 140, outerSecondAngle = 40;
+  long innerFirstAngle = 0, outerFirstAngle = 0;
+  long innerSecondAngle = 0, outerSecondAngle = 0;
 
   Inner.setMaxSpeed(90);
   Inner.setAcceleration(30);
@@ -161,6 +159,7 @@ void loop() {
 }
 
 void pickUpAt(int innerAngle, int outerAngle) {
+  
   int innerSteps = -2.88*innerAngle;
   if (innerSteps>0) {
     Inner.move(innerSteps);
@@ -256,6 +255,7 @@ void receiveEvent() {
       i++;
    }
    receivedMove[5] = '\0'; // Null-terminate the received char array
+   Serial.print("Received move: ");
    Serial.println(receivedMove); // Print received data to serial monitor
 
    if (receivedMove[0] == 'o') {
@@ -278,13 +278,6 @@ void makeMove() {
   uint8_t srcY = atoi(&src[1]);
   char destX = dest[0];
   uint8_t destY = atoi(&dest[1]);
-   
-  /*
-  Serial.print(srcX);
-  Serial.print(srcY);
-  Serial.print(destX);
-  Serial.println(destY);
-  */
 
   ChessboardSquare &srcSquare = board.getSquare(srcX,srcY);   // Source Square Info
   ChessboardSquare &destSquare = board.getSquare(destX,destY);  // Dest Square Info
@@ -301,22 +294,37 @@ void makeMove() {
   Serial.print(destSquare.getTheta1());
   Serial.print(", theta2 = ");
   Serial.println(destSquare.getTheta2());
+  
+  long innerFirstAngle = 0;
+  long outerFirstAngle = 0;
+  long innerSecondAngle = 0;
+  long outerSecondAngle = 0;
 
-   
-  pickUpAt(innerFirstAngle,outerFirstAngle);
+  innerFirstAngle = srcSquare.getTheta1();
+  outerFirstAngle = srcSquare.getTheta2();
+  innerSecondAngle = destSquare.getTheta1();
+  outerSecondAngle = destSquare.getTheta2();
+
+  if (innerFirstAngle != 0) {
+    pickUpAt(innerFirstAngle,outerFirstAngle);
+  }
 
   long innerPlaceAngle = innerSecondAngle - innerFirstAngle;
   long outerPlaceAngle = innerSecondAngle - innerFirstAngle;
-  
-  putDownAt(innerPlaceAngle,outerPlaceAngle);
+
+  if (innerPlaceAngle != 0) {
+    putDownAt(innerPlaceAngle,outerPlaceAngle);
+  }
 
   Inner.setMaxSpeed(225);
   Inner.setSpeed(75);
   Outer.setMaxSpeed(225);
   Outer.setSpeed(75);
 
-  switchValue1 = 0;
-  switchValue2 = 0;
+  if (innerFirstAngle != 0) {  
+    switchValue1 = 0;
+    switchValue2 = 0;
+}
 
   while (switchValue1 == 0) {
     Inner.runSpeed();
@@ -341,5 +349,3 @@ void makeMove() {
   innerSecondAngle = 0;
   outerSecondAngle = 0;
 }
-
-
