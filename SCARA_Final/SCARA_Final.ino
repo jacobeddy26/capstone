@@ -96,13 +96,15 @@ const scaraAngle hardcodedAngles[8][8][3] = {
    {{"b1", 122.0, 27.0}, {"b2", 138.0, 15.0}, {"b3", 158.0, 8.0}, {"b4", 183.0, 3.0}, {"b5", 206.0, 3.0}, {"b6", 221.0, 8.0}, {"b7", 227.0, 14.0}, {"b8", 233.0, 24.0}},   
    {{"c1", 127.0, 35.0}, {"c2", 144.0, 24.0}, {"c3", 156.0, 19.0}, {"c4", 174.0, 16.0}, {"c5", 204.0, 19.0}, {"c6", 204.0, 18.0}, {"c7", 213.0, 24.0}, {"c8", 218.0, 33.0}},
    {{"d1", 130.0, 43.0}, {"d2", 143.0, 36.0}, {"d3", 156.0, 30.0}, {"d4", 169.0, 29.0}, {"d5", 194.0, 29.0}, {"d6", 194.0, 30.0}, {"d7", 200.0, 36.0}, {"d8", 205.0, 42.0}},
-   {{"e1", 130.0, 55.0}, {"e2", 141.0, 49.0}, {"e3", 153.0, 43.0}, {"e4", 164.0, 41.0}, {"e5", 174.0, 41.0}, {"e6", 184.0, 42.0}, {"e7", 189.0, 48.0}, {"e8", 194.0, 55.0}},
+   {{"e1", 134.0, 55.0}, {"e2", 145.0, 49.0}, {"e3", 157.0, 43.0}, {"e4", 168.0, 41.0}, {"e5", 178.0, 41.0}, {"e6", 188.0, 42.0}, {"e7", 193.0, 48.0}, {"e8", 198.0, 55.0}},
    {{"f1", 126.0, 69.0}, {"f2", 138.0, 62.0}, {"f3", 148.0, 56.0}, {"f4", 158.0, 53.0}, {"f5", 167.0, 53.0}, {"f6", 174.0, 56.0}, {"f7", 178.0, 61.0}, {"f8", 182.0, 69.0}},
    {{"g1", 122.0, 85.0}, {"g2", 132.0, 78.0}, {"g3", 142.0, 74.0}, {"g4", 151.0, 72.0}, {"g5", 157.0, 71.0}, {"g6", 164.0, 74.0}, {"g7", 167.0, 76.0}, {"g8", 170.0, 85.0}},
    {{"h1", 113.0, 108.0}, {"h2", 125.0, 97.0}, {"h3", 132.0, 94.0}, {"h4", 141.0, 89.0}, {"h5", 146.0, 92.0}, {"h6", 152.0, 94.0}, {"h7", 154.0, 101.0}, {"h8", 157.0, 107.0}}
 };
 
 Chessboard board(hardcodedAngles);
+
+bool moveReady = false;
 
 void setup() {
   Serial.begin(115200);
@@ -140,7 +142,10 @@ void setup() {
       switchValue2 = 0;
     }
   }
-
+  //Outer.moveTo(offset);
+  //Outer.runToPosition();
+  //Inner.moveTo(offset);
+  //Inner.runToPosition();
   Inner.setMaxSpeed(90);
   Inner.setAcceleration(30);
   Outer.setMaxSpeed(90);
@@ -148,7 +153,9 @@ void setup() {
 }
 
 void loop() {
-
+   if (moveReady) {
+      makeMove();
+   }
 }
 
 void pickUpAt(int innerAngle, int outerAngle) {
@@ -160,6 +167,7 @@ void pickUpAt(int innerAngle, int outerAngle) {
   } else {
     Inner.move(innerSteps);
   }
+  delay(100);
   long outerSteps = -2.88*outerAngle;
   //Serial.println(outerSteps);
   if (outerSteps>0) {
@@ -167,16 +175,13 @@ void pickUpAt(int innerAngle, int outerAngle) {
   } else {
     Outer.move(outerSteps);
   }
-delay(2000);
+   delay(100);
   while(Outer.currentPosition() != Outer.targetPosition()) {
-   Serial.println(Outer.currentPosition());
-   Outer.runSpeed();
+   Outer.run();
   }
-/*
   while(Inner.currentPosition() != Inner.targetPosition()) {
     Inner.run();
   }
-
   digitalWrite(actPos, HIGH);
   digitalWrite(actNeg, LOW);
   delay(5000);  
@@ -186,11 +191,10 @@ delay(2000);
   digitalWrite(actNeg, HIGH);
   delay(5000);
   holding = 1;
-  */
 }
 
 void putDownAt(int innerAngle, int outerAngle) {
-   //Serial.println("Put Down");
+   Serial.println("Put Down");
   
   int innerSteps = (int)(-2.88*innerAngle);
   if (innerSteps>0) {
@@ -242,23 +246,25 @@ void receiveEvent() {
    char receivedMove[6];
    int i = 0;
    while (Wire.available() && i < 6) {
+      digitalWrite(13,HIGH);
       receivedMove[i] = Wire.read(); // Read char data
       i++;
+      digitalWrite(13,LOW);
    }
    receivedMove[5] = '\0'; // Null-terminate the received char array
-   //Serial .print("Received move: ");
-   //Serial.println(receivedMove); // Print received data to serial monitor
+   Serial .print("Received move: ");
+   Serial.println(receivedMove); // Print received data to serial monitor
    parseChessMove(receivedMove);
    if (receivedMove[0] == 'o') {
       // Castle
-      Serial.println("Castle");
+      //Serial.println("Castle");
    } else if (receivedMove[0] == 'x') {
       // Capture
-      Serial.println("Capture");
+      //Serial.println("Capture");
       // removeCapture()
    } else {
       // Normal
-      makeMove();
+      moveReady=true;
    }
 }
 
@@ -270,7 +276,7 @@ void makeMove() {
 
   ChessboardSquare &srcSquare = board.getSquare(srcX,srcY);   // Source Square Info
   ChessboardSquare &destSquare = board.getSquare(destX,destY);  // Dest Square Info
-/*
+
   Serial.print("Source Square ");
   Serial.print(srcSquare.getName());
   Serial.print(": theta1 = ");
@@ -283,11 +289,11 @@ void makeMove() {
   Serial.print(destSquare.getTheta1());
   Serial.print(", theta2 = ");
   Serial.println(destSquare.getTheta2());
- */
-  double innerFirstAngle = 0;
-  double outerFirstAngle = 0;
-  double innerSecondAngle = 0;
-  double outerSecondAngle = 0;
+ 
+  long innerFirstAngle = 0;
+  long outerFirstAngle = 0;
+  long innerSecondAngle = 0;
+  long outerSecondAngle = 0;
 
   innerFirstAngle = srcSquare.getTheta1();
   outerFirstAngle = srcSquare.getTheta2();
@@ -297,7 +303,7 @@ void makeMove() {
   if (innerFirstAngle != 0) {
     pickUpAt(innerFirstAngle,outerFirstAngle);
   }
-/*
+
   double innerPlaceAngle = innerSecondAngle - innerFirstAngle;
   double outerPlaceAngle = innerSecondAngle - innerFirstAngle;
 
@@ -337,5 +343,6 @@ void makeMove() {
   outerFirstAngle = 0;
   innerSecondAngle = 0;
   outerSecondAngle = 0;
-  */
+  
+  moveReady=false;
 }
