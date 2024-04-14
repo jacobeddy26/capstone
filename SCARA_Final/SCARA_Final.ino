@@ -247,19 +247,23 @@ void receiveEvent() {
       i++;
    }
    receivedMove[5] = '\0'; // Null-terminate the received char array
-   Serial .print("Received move: ");
-   Serial.println(receivedMove); // Print received data to serial monitor
-   parseChessMove(receivedMove);
-   if (receivedMove[0] == 'o') {
-      // Castle
-      //Serial.println("Castle");
-   } else if (receivedMove[0] == 'x') {
-      // Capture
-      //Serial.println("Capture");
-      // removeCapture()
-   } else {
-      // Normal
-      moveReady=true;
+   if ((receivedMove[0] =='?') || (receivedMove[0] == 'x') || receivedMove[0] == 'o')
+   {
+      Serial .print("Received move: ");
+      Serial.println(receivedMove); // Print received data to serial monitor
+      parseChessMove(receivedMove);
+
+      if (receivedMove[0] == 'o') {
+         // Castle
+         //Serial.println("Castle");
+      } else if (receivedMove[0] == 'x') {
+         // Capture
+         //Serial.println("Capture");
+         // removeCapture()
+      } else {
+         // Normal
+         moveReady=true;
+      }
    }
 }
 
