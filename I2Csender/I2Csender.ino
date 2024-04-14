@@ -9,6 +9,7 @@ void setup()
 {
    Serial.begin(115200);
    Wire.begin(boardSA); // Initialize I2C communication with set slave address
+   Wire.onReceive(receiveEvent);
 }
 
 void loop() 
@@ -38,5 +39,23 @@ void loop()
       Wire.write(userMove,5);
       //Wire.write(userMove,6);
       Wire.endTransmission();
+   }
+}
+
+// Function to receive data over I2C
+void receiveEvent() {
+   // Define move received from I2C
+   char receivedMove[6];
+   int i = 0;
+   while (Wire.available() && i < 6) {
+      receivedMove[i] = Wire.read(); // Read char data
+      i++;
+   }
+   receivedMove[5] = '\0'; // Null-terminate the received char array
+   delay(100);
+   if ((receivedMove[0] =='?') || (receivedMove[0] == 'x') || receivedMove[0] == 'o')
+   {
+      Serial .print("Received move: ");
+      Serial.println(receivedMove); // Print received data to serial monitor
    }
 }

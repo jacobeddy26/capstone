@@ -6,11 +6,11 @@
 /* Quito junio 2014        Ecuador                                         */
 /***************************************************************************/
 #include <Wire.h>
+#include <LiquidCrystal.h>
 #include <Elegoo_GFX.h>    // Core graphics library
 #include <Elegoo_TFTLCD.h> // Hardware-specific library
 #include <TouchScreen.h>
 #include <avr/wdt.h>
-#include "Chessuino.h"
 
 // The control pins for the LCD can be assigned to any digital or
 // analog pins...but we'll use the analog pins as this allows us to
@@ -196,7 +196,7 @@ void loop(){
       game_over();
    } else if (r!=8000 && moveCounter >1) {
       // Move Not Found!
-      illegal_move_alert();
+      //illegal_move_alert();
    } else {
 
    }
@@ -292,7 +292,7 @@ void loop(){
       Wire.endTransmission();
    }
 
-   strcpy(c, "a1a1");                        /* Execute a invalid move to check r again */
+   strcpy(c, "a1a1");                        /* Execute a invalid move to check score again */
    r = D(-I,I,Q,O,1,3);
    if( !(r>-I+1) ){
       game_over();
@@ -365,26 +365,25 @@ unsigned short myrand(void) {
    return r=((r<<11)+(r<<7)+r)>>1;
 }
 /* recursive minimax search */
-/* (q,l)=window, e=current eval. r, */
-/* E=e.p. sqr.z=prev.dest, n=depth; return r */
+/* (q,l)=window, e=current eval. score, */
+/* E=e.p. sqr.z=prev.dest, n=depth; return score */
 short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned char n){
    short m,v,i,P,V,s;
    unsigned char t,p,u,x,y,X,Y,H,B,j,d,h,F,G,C;
    signed char r;
    isCapture = false;
    isCastle = false;
-   //Serial.print("D c1: "); Serial.println(c);
+
    if (++Z>30) {                                     /* stack underrun check */
       breakpoint=1;               /* AVR Studio 4 Breakpoint for stack underrun */
       myputchar('u');
       --Z;return e;                                    
    }
-   //Serial.print("D c2: "); Serial.println(c);
+  
    digitalWrite(13, (ledv++)%8?0:1);
-   //Serial.print("D c3: "); Serial.println(c);
+ 
    q--;                                          /* adj. window: delay bonus */
    k^=24;                                        /* change sides             */
-   //Serial.print("D c4: "); Serial.println(c);
    delay(500);
    d=Y=0;                                        /* start iter. from scratch */
    X=myrand()&~M;                                /* start at random field    */
@@ -397,23 +396,21 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
       m=-P<l|R>35?d>2?-I:e:-P;                     /* Prune or stand-pat       */
       ++N;                                         /* node count (for timing)  */
       do{
-         /*if (p == 6 && abs(y - x) == 2) {            // If the moving piece is the king and the move is a two-square move
+         if (p == 6 && abs(y - x) == 2) {            // If the moving piece is the king and the move is a two-square move
             isCastle = true;                        // Set flag for castle
-         }*/
-         //Serial.print("D c5: "); Serial.println(c);
+         }
          u=b[x];                                     /* scan board looking for   */
          if(u&k){                                    /*  own piece (inefficient!)*/
             r=p=u&7;                                   /* p = piece type (set r>0) */
             j=o[p+16];                                 /* first step vector f.piece*/
             W(r=p>2&r<0?-r:-o[++j])                    /* loop over directions o[] */
+            // Check if move is a capture
+            if (i < 0) {                               /* Capture move */
+               isCapture = true;                       /* Set flag for capture */
+            }
             {A:                                        /* resume normal after best */
-               /* Check if move is a capture
-               if (i < 0) {                               // Capture move
-                  isCapture = true;                       // Set flag for capture
-               }*/
                y=x;F=G=S;                                /* (x,y)=move, (F,G)=castl.R*/
                do{                                       /* y traverses ray, or:     */
-                  //Serial.print("D c6: "); Serial.println(c);
                   H=y=h?Y^h:y+r;                           /* sneak in prev. best move */
                   if(y&M)break;                            /* board edge hit           */
                   m=E-S&b[E]&&y-E<2&E-y<2?I:m;             /* bad castling             */
@@ -421,14 +418,13 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
                   t=b[H];if(t&k|p<3&!(y-x&7)-!t)break;     /* capt. own, bad pawn mode */
                   i=37*w[t&7]+(t&192);                     /* value of capt. piece t   */
                   m=i<0?I:m;                               /* K capture                */
-                  //Serial.print("D c7: "); Serial.println(c);
                   if(m>=l&d>1)goto C;                      /* abort on fail high       */
                   v=d-1?e:i-p;                             /* MVV/LVA scoring          */
                   if(d-!t>1)                               /* remaining depth          */
                   {
                      v=p<6?b[x+8]-b[y+8]:0;                  /* center positional pts.   */
                      b[G]=b[H]=b[x]=0;b[y]=u|32;             /* do move, set non-virgin  */
-                     if(!(G&M))b[F]=k+6,v+=50;               /* castling: put R & r  */
+                     if(!(G&M))b[F]=k+6,v+=50;               /* castling: put R & score  */
                      v-=p-4|R>29?0:20;                       /* penalize mid-game K move */
                      if(p<3)                                 /* pawns:                   */
                      {v-=9*((x-2&M||b[x-2]-u)+               /* structure, undefended    */
@@ -437,14 +433,12 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
                            -(R>>2);                          /* end-game Pawn-push bonus */
                                                                //user_promo()
                         V=y+r+1&S?647-p:2*(u&y+16&32);         /* PROMOTION or 6/7th bonus */
-                        //Serial.print("D c8: "); Serial.println(c);
                         Wire.beginTransmission(boardSA);       // Transmit piece promoted value
                         Wire.write((int)V);               
                         Wire.endTransmission();
                         //cpu_promo((int)V);                     // Computer Promotion call
-                        b[y]+=V;i+=V;                          /* change piece, add r  */
+                        b[y]+=V;i+=V;                          /* change piece, add score  */
                      }
-                     //Serial.print("D c9: "); Serial.println(c);
                      v+=e+i;V=m>q?m:q;                       /* new eval and alpha       */
                      C=d-1-(d>5&p>2&!t&!h);
                      C=R>29|d<3|P-I?C:d;                     /* extend 1 ply if in check */
@@ -452,19 +446,15 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
                         s=C>2|v>V?-D(-l,-V,-v,                 /* recursive eval. of reply */
                                        F,0,C):v;        /* or fail low if futile    */
                      W(s>q&++C<d);v=s;
-                     //Serial.print("D c10: "); Serial.println(c);
                      if(z&&K-I&&v+I&&x==K&y==L)              /* move pending & in root:  */
                      {Q=-e-i;O=F;                            /*   exit if legal & found  */
                         R+=i>>7;--Z;return l;                  /* captured non-P material  */
                      }
                      b[G]=k+6;b[F]=b[y]=0;b[x]=u;b[H]=t;     /* undo move,G can be dummy */
                   }
-                  //Serial.print("D c11: "); Serial.println(c);
                   if(v>m)                                  /* new best, update max,best*/
                      m=v,X=x,Y=y|S&F;                        /* mark double move with S  */
-                  //Serial.print("D c12: "); Serial.println(c);
                   if(h){h=0;goto A;}                       /* redo after doing old best*/
-                  //Serial.print("D c13: "); Serial.println(c);
                   if(x+r-y|u&32|                           /* not 1st step,moved before*/
                      p>2&(p-4|j-7||                        /* no P & no lateral K move,*/
                      b[G=x+3^r>>1&7]-k-6                   /* no virgin R in corner G, */
@@ -473,33 +463,29 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
                   else F=y;                                /* enable e.p.              */
                }
                W(!t);                                   /* if not capt. continue ray*/
-               //Serial.print("D c14: "); Serial.println(c);
             }
          }
       }
       W((x=x+9&~M)-B);                          /* next sqr. of board, wrap */
-      //Serial.print("D c15: "); Serial.println(c);
       C:if(m>I-M|m<M-I)d=98;                         /* mate holds to any depth  */
       m=m+I|P==I?m:0;                              /* best loses K: (stale)mate*/
-      //Serial.print("D c16: "); Serial.println(c);
       if(z&&d>2)
       {
          *c='a'+(X&7);c[1]='8'-(X>>4);c[2]='a'+(Y&7);c[3]='8'-(Y>>4&7);c[4]=0;
          breakpoint=2;           /* AVR Studio 4 Breakpoint for moves, watch c[] */
          char buff[150];
          #ifdef DEBUG
-            sprintf(buff, "%2d ply, %9d searched, r=%6d by %c%c%c%c\n",d-1,N-S,m,
+            sprintf(buff, "%2d ply, %9d searched, score=%6d by %c%c%c%c\n",d-1,N-S,m,
                'a'+(X&7),'8'-(X>>4),'a'+(Y&7),'8'-(Y>>4&7)); /* uncomment for Kibitz */
             Serial.print(buff);
          #endif
       }
    }                                             /*    encoded in X S,8 bits */
-   //Serial.print("D c17: "); Serial.println(c);
    k^=24;                                        /* change sides back        */
    --Z;
    Serial.print("D: "); Serial.println(c);
-   //Serial.print("D c18: "); Serial.println(c);
-   --Z;return m+=m<e;                            /* delayed-loss bonus       */
+   
+   return m+=m<e;                            /* delayed-loss bonus       */
 }
 
 void serialBoard(){
@@ -689,6 +675,21 @@ String UserBestMove() {
    Serial.print("Human's best move: ");
    Serial.println(bestMove);
    return hint=convertToString(bestMove,5);;
+}
+
+// function that executes whenever data is received from the master
+// this function is registered as an event,  see setup()
+void receiveEvent() {
+   int i = 0;
+   while (Wire.available() && i < 5) {
+      inputMove[i] = Wire.read(); // Read char data
+      i++;
+   }
+   inputMove[4] = '\0'; // Null-terminate the received char array
+   Serial.print("Input Move: ");
+   Serial.println(inputMove); // Print received data to serial monitor
+   moveReceived=true;
+   delay(100);
 }
 
 // prints line of text
@@ -1644,19 +1645,4 @@ String convertToString(char* a, int size)
         s = s + a[i];
     }
     return s;
-}
-
-// function that executes whenever data is received from the master
-// this function is registered as an event,  see setup()
-void receiveEvent() {
-   int i = 0;
-   while (Wire.available() && i < 5) {
-      c[i] = Wire.read(); // Read char data
-      i++;
-   }
-   c[4] = 0; // Null-terminate the received char array
-   Serial.print("Input Move: ");
-   Serial.println(c); // Print received data to serial monitor
-   moveReceived=true;
-   delay(100);
 }

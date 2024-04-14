@@ -22,11 +22,17 @@ LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);        // Pins to control LCD display
 int adc_key_val[5] ={50, 200, 400, 600, 800 };  // Analog values from keypad
 
 char bestMove[5] = {0}; // Initialize best move globally
+bool moveReceived = false;
+bool isWhiteSelected = true;
+char inputMove[5];
+char outputMove[6];
+int moveCounter = 0;
 
 void setup(){
-    Wire.begin();
+    Wire.begin(engineSA);
+    Wire.onReceive(receiveEvent);
     Serial.begin(115200);
-    Serial.println("  *** CHESSuino ***");
+    Serial.println("  *** CHESSuino ***\n");
     
     lcd.clear(); 
     lcd.begin(16, 2);  
@@ -34,8 +40,6 @@ void setup(){
     lastH[0] = 0;
     characters();
     pinMode(13, OUTPUT);
-
-    //playSerialMode();                  /* Debug mode using Serial Monitor */
 }
 
 void loop(){
@@ -56,16 +60,19 @@ void loop(){
     
     K=*c-16*c[1]+799,L=c[2]-16*c[3]+799;      /* parse entered move */
     N=0;
-    T=0x3F;                                   /* T=Computer Play strength */
+    T=0x01;                                   /* T=Computer Play strength */
     bkp();                                    /* Save the board just in case */    
     r = D(-I,I,Q,O,1,3);                      /* Check & do the human movement */
     if( !(r>-I+1) ){
         lcd.setCursor(10, 1);
         lcd.print("Lose "); 
         gameOver();
+    } else if (r!=8000 && moveCounter>1) {
+      Serial.println("Illegal Move!");
     } else {
-      Serial.println("Move not found!");
+
     }
+
     if(k == 0x10){                            /* The flag turn must change to 0x08 */
         lcd.setCursor(10, 1);
         lcd.print("     ");
@@ -74,7 +81,6 @@ void loop(){
   
     // Input human move
     strcpy(lastH, c);                         /* Valid human movement */
-
     mn++;                                     /* Next move */
     searchDataBase();                         /* Search in database */
     if(c[0]){                                 /* Movement found */
@@ -83,7 +89,7 @@ void loop(){
         lcd.print(" *");
         K=*c-16*c[1]+799,L=c[2]-16*c[3]+799;  /* parse move found */
         N=0;
-        T=0x3F;                               /* T=Computer Play strength */
+        T=0x01;                               /* T=Computer Play strength */
         r = D(-I,I,Q,O,1,3);                  /* Check & do*/
         if( !(r>-I+1) ) gameOver();
         if(k == 0x08){
@@ -92,19 +98,25 @@ void loop(){
             gameOver();
         }
         
-        strcpy(lastM, c);                         /* Valid ARDUINO movement */
+        outputMove[0]='?';
+        outputMove[1]=c[0];
+        outputMove[2]=c[1];
+        outputMove[3]=c[2];
+        outputMove[4]=c[3];
+        Serial.print("Output Move: "); 
+        Serial.print(outputMove); Serial.println("\n");
 
-        Wire.beginTransmission(scaraSA);          // beginTransmission(address)
-        Wire.write(c,5); 
+        Wire.beginTransmission(boardSA);          // beginTransmission(address)
+        Wire.write(outputMove); 
         Wire.endTransmission();                   // Output Computer's Move as String to I2C
-
-        delay(1000);        
+        
+        strcpy(lastM, c);                         /* Valid ARDUINO movement */
         return;
     }
     
     K=I;
     N=0;
-    T=0x3F;                                   /* T=Computer Play strength */
+    T=0x01;                                   /* T=Computer Play strength */
     r = D(-I,I,Q,O,1,3);                      /* Think & do computer's move*/    
 
     if( !(r>-I+1) ){
@@ -119,11 +131,19 @@ void loop(){
         gameOver();                           /* 1. b1c3  c7c5?       2. f2f4? */
     }
 
-    strcpy(lastM, c);                         /* Valid ARDUINO movement */
+    outputMove[0]='?';
+    outputMove[1]=c[0];
+    outputMove[2]=c[1];
+    outputMove[3]=c[2];
+    outputMove[4]=c[3];
 
-    Wire.beginTransmission(scaraSA);          // beginTransmission(address)
-    Wire.write(c,5); 
+    Serial.print("Output Move: "); 
+    Serial.print(outputMove); Serial.println("\n");
+    Wire.beginTransmission(boardSA);          // beginTransmission(address)
+    Wire.write(outputMove); 
     Wire.endTransmission();                   // Output Computer's Move as String to I2C
+    
+    strcpy(lastM, c);                         /* Valid ARDUINO movement */
 
     strcpy(c, "a1a1");                        /* Execute a invalid move to check score again */
     r = D(-I,I,Q,O,1,3);
@@ -142,67 +162,26 @@ void loop(){
 }
 
 void takeMove(){
-    int sss=0;
+    if (mn==1 && strcmp(c,"a1a1")==0)
+    {
+      return;
+    }
     
     lcd.setCursor(0,1);
     lcd.print("                ");
     printMN(mn, 1);
 
     printMove();
-    for(;;){
-        int k = waitForKey();
-        delay(200);
-        
-        switch(k){
-            case 0:   // RIGHT
-                if(sss==0 && x1 <7){ x1++;}
-                if(sss==1 && x2 <7){ x2++;}
-            break;
-            
-            case 1:   // UP
-                if(sss==0 && y1 <7){ y1++;}
-                if(sss==1 && y2 <7){ y2++;}
-            break;
-            
-            case 2:   // DOWN
-                if(sss==0 && y1 >0){ y1--;}
-                if(sss==1 && y2 >0){ y2--;}
-            break;
-            
-            case 3:   // LEFT
-                if(sss==0 && x1 >0){ x1--;}
-                if(sss==1 && x2 >0){ x2--;}
-            break;
-            
-            case 4:   // SELECT  think
-                if(sss==1){
-                    if(x2>=0 && y2>=0){
-                        c[0] = x1+'a';
-                        c[1] = y1+'1';
-                        c[2] = x2+'a';
-                        c[3] = y2+'1';
-                        c[4] = 0;
-                        // No tone to validate movement
-                        return;
-                    }else{
-                        // Move invalid
-                    }                        
-                }            
-                if(sss==0){
-                    if(x1>=0 && y1>=0){
-                        sss=1;
-                    }else{
-                        // GO TO BOARD NAVIGATION
-                        boardNavigate();
-                        printLastMovs();
-                        printMN(mn, 1);
-                    }
-                }
-            break;
-        }
-        
-        printMove();
-    }
+    while(true) {
+      delay(100);
+      if (moveReceived) {
+         strcpy(c,inputMove);
+         Serial.println(c);
+         moveReceived=false;
+         delay(100);
+         break;
+      }
+   }
 }
 
 void printMove(){
@@ -249,17 +228,12 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
  short m,v,i,P,V,s;
  unsigned char t,p,u,x,y,X,Y,H,B,j,d,h,F,G,C;
  signed char r;
-
- int promotedPiece;
-
  if (++Z>30) {                                     /* stack underrun check */
   breakpoint=1;               /* AVR Studio 4 Breakpoint for stack underrun */
   myputchar('u');
   --Z;return e;                                    
  }
-  
  digitalWrite(13, (ledv++)%8?0:1);
- 
  q--;                                          /* adj. window: delay bonus */
  k^=24;                                        /* change sides             */
  d=Y=0;                                        /* start iter. from scratch */
@@ -344,7 +318,8 @@ C:if(m>I-M|m<M-I)d=98;                         /* mate holds to any depth  */
   }
  }                                             /*    encoded in X S,8 bits */
  k^=24;                                        /* change sides back        */
- --Z;return m+=m<e;                            /* delayed-loss bonus       */
+ --Z;
+ return m+=m<e;                            /* delayed-loss bonus       */
 }
 
 void serialBoard(){
@@ -632,19 +607,39 @@ void putPiece(int x, int y, char piece){
 }
 
 void UserBestMove() {
-    int r;
-    // Save the current state of the board
-    bkp();
-    // Calculate the best move for the user
-    k ^= 24; // Switch sides for user move
-    r = D(-I, I, Q, O, 0, 3); // Calculate human's best move
-    k ^= 24; // Switch back sides for computer's move
-    if (!(r > -I + 1)) {
-        Serial.println("Error: Human's best move calculation failed.");
-        return;
-    }
-    // Output the best move for the user
-    Serial.print("Human's best move: ");
-    Serial.println(c);
+   int r;
+   // Save the current state of the board
+   bkp();
+   // Calculate the best move for the user
+   k ^= 24; // Switch sides for user move
+   delay(100);
+   r = D(-I, I, Q, O, 0, 3); // Calculate human's best move
+   k ^= 24; // Switch back sides for computer's move
+   delay(100);
+   strcpy(bestMove,c);
+   if (moveCounter==0) {
+      strcpy(c,"a1a1\0");
+      moveCounter++;
+      return;
+   } else if (moveCounter==1) {
+      moveCounter++;
+   }
+   delay(100);
+   // Output the best move for the user
+   Serial.print("Human's best move: ");
+   Serial.println(bestMove);
 }
 
+// function that executes whenever data is received from the master
+// this function is registered as an event,  see setup()
+void receiveEvent() {
+   Serial.println("received");
+   int i = 0;
+   while (Wire.available() && i < 5) {
+      inputMove[i] = Wire.read(); // Read char data
+      i++;
+   }
+   inputMove[4] = 0; // Null-terminate the received char array
+   moveReceived=true;
+   delay(100);
+}

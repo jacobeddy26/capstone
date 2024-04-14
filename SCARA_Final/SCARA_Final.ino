@@ -142,10 +142,7 @@ void setup() {
       switchValue2 = 0;
     }
   }
-  //Outer.moveTo(offset);
-  //Outer.runToPosition();
-  //Inner.moveTo(offset);
-  //Inner.runToPosition();
+
   Inner.setMaxSpeed(90);
   Inner.setAcceleration(30);
   Outer.setMaxSpeed(90);
@@ -245,11 +242,9 @@ void receiveEvent() {
    // Define move received from I2C
    char receivedMove[6];
    int i = 0;
-   while (Wire.available() && i < 6) {
-      digitalWrite(13,HIGH);
+   while (Wire.available() && i < 5) {
       receivedMove[i] = Wire.read(); // Read char data
       i++;
-      digitalWrite(13,LOW);
    }
    receivedMove[5] = '\0'; // Null-terminate the received char array
    Serial .print("Received move: ");
@@ -277,6 +272,7 @@ void makeMove() {
   ChessboardSquare &srcSquare = board.getSquare(srcX,srcY);   // Source Square Info
   ChessboardSquare &destSquare = board.getSquare(destX,destY);  // Dest Square Info
 
+  /*
   Serial.print("Source Square ");
   Serial.print(srcSquare.getName());
   Serial.print(": theta1 = ");
@@ -289,7 +285,7 @@ void makeMove() {
   Serial.print(destSquare.getTheta1());
   Serial.print(", theta2 = ");
   Serial.println(destSquare.getTheta2());
- 
+   */
   long innerFirstAngle = 0;
   long outerFirstAngle = 0;
   long innerSecondAngle = 0;
