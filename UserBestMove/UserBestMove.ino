@@ -27,6 +27,8 @@ bool isWhiteSelected = true;
 char inputMove[5];
 char outputMove[6];
 int moveCounter = 0;
+bool isCastle = false;
+bool isCapture = false;
 
 void setup(){
     Wire.begin(engineSA);
@@ -98,21 +100,34 @@ void loop(){
             gameOver();
         }
         
-        outputMove[0]='?';
-        outputMove[1]=c[0];
-        outputMove[2]=c[1];
-        outputMove[3]=c[2];
-        outputMove[4]=c[3];
-        Serial.print("Output Move: "); 
-        Serial.print(outputMove); Serial.println("\n");
+       outputMove[0]='?';
+       outputMove[1]=c[0];
+       outputMove[2]=c[1];
+       outputMove[3]=c[2];
+       outputMove[4]=c[3];
+       // Throw a flag if the calculated move is a capture or castle
+       if (isCapture) {                             // Set flag for capture
+          outputMove[0]='x';
+          Wire.beginTransmission(scaraSA);          // Transmit capture move
+          Wire.write(outputMove); 
+          Wire.endTransmission();                             
+       } else if (isCastle) {                       // Set flag for castle
+          outputMove[0]='o';
+          Wire.beginTransmission(scaraSA);          // Transmit castle move
+          Wire.write(outputMove); 
+          Wire.endTransmission();                   
+       } else {
+          Wire.beginTransmission(scaraSA);          // Transmit normal move
+          Wire.write(outputMove); 
+          Wire.endTransmission();
+       }
+       Serial.print("Output Move: "); 
+       Serial.print(outputMove); Serial.println("\n");
 
-        Wire.beginTransmission(boardSA);          // beginTransmission(address)
-        Wire.write(outputMove); 
-        Wire.endTransmission();                   // Output Computer's Move as String to I2C
         
-        strcpy(lastM, c);                         /* Valid ARDUINO movement */
-        return;
-    }
+       strcpy(lastM, c);                         /* Valid ARDUINO movement */
+       return;
+      }
     
     K=I;
     N=0;
@@ -136,12 +151,26 @@ void loop(){
     outputMove[2]=c[1];
     outputMove[3]=c[2];
     outputMove[4]=c[3];
-
+    // Throw a flag if the calculated move is a capture or castle
+    if (isCapture) {                             // Set flag for capture
+       outputMove[0]='x';
+       Wire.beginTransmission(scaraSA);          // Transmit capture move
+       Wire.write(outputMove); 
+       Wire.endTransmission();
+       isCapture=false;                             
+    } else if (isCastle) {                       // Set flag for castle
+       outputMove[0]='o';
+       Wire.beginTransmission(scaraSA);          // Transmit castle move
+       Wire.write(outputMove); 
+       Wire.endTransmission();
+       isCastle=false;                   
+    } else {
+       Wire.beginTransmission(scaraSA);          // Transmit normal move
+       Wire.write(outputMove); 
+       Wire.endTransmission();
+    }
     Serial.print("Output Move: "); 
     Serial.print(outputMove); Serial.println("\n");
-    Wire.beginTransmission(boardSA);          // beginTransmission(address)
-    Wire.write(outputMove); 
-    Wire.endTransmission();                   // Output Computer's Move as String to I2C
     
     strcpy(lastM, c);                         /* Valid ARDUINO movement */
 
@@ -262,6 +291,12 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
       t=b[H];if(t&k|p<3&!(y-x&7)-!t)break;     /* capt. own, bad pawn mode */
       i=37*w[t&7]+(t&192);                     /* value of capt. piece t   */
       m=i<0?I:m;                               /* K capture                */
+      //Serial.print("i: "); Serial.println(i);
+      //Serial.print("t: "); Serial.println(t);
+      //Serial.print("K: "); Serial.println(K);
+      if (K==8000) {                                 // Capture move
+         isCapture = true;                     // Set flag for capture
+      }  
       if(m>=l&d>1)goto C;                      /* abort on fail high       */
       v=d-1?e:i-p;                             /* MVV/LVA scoring          */
       if(d-!t>1)                               /* remaining depth          */
@@ -319,6 +354,10 @@ C:if(m>I-M|m<M-I)d=98;                         /* mate holds to any depth  */
  }                                             /*    encoded in X S,8 bits */
  k^=24;                                        /* change sides back        */
  --Z;
+ if (p == 6 && abs(y - x) == 2) {            // If the moving piece is the king and the move is a two-square move
+    isCastle = true;                         // Set flag for castle
+ }
+ //Serial.println(c);
  return m+=m<e;                            /* delayed-loss bonus       */
 }
 
