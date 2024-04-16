@@ -1,5 +1,6 @@
 # capstone
 2023/2024 HPU Capstone - Chess Education Robot
+
 This is the code space for the High Point University Senior Electrical & Computer Engineering Capstone
 Project for 2024. The code uses I2C communication between 3 Arduino MEGAs to mangage a SCARA (robotic arm),
 Capactive Touch input system, sub-board LEDs for illuminating hints, a LCD Touchscreen (currently semi-functional),
