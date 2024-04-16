@@ -8,7 +8,7 @@ and the Micro-Max Chess Engine.
 
 3 system files:
 1) FullBoard_w_Rules
-2) SCARA_final
+2) SCARA_Final
 3) main (currently using UserBestMove with 16x2 LCD w/ Keypad Shield)
 
 The original code, "Chessuino" was a ported chess program to Arduino MEGA by Diego Cueva (June 2014). 
