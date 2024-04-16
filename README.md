@@ -6,6 +6,11 @@ Project for 2024. The code uses I2C communication between 3 Arduino MEGAs to man
 Capactive Touch input system, sub-board LEDs for illuminating hints, a LCD Touchscreen (currently semi-functional),
 and the Micro-Max Chess Engine. 
 
+3 system files:
+1) FullBoard_w_Rules
+2) SCARA_final
+3) main (currently using UserBestMove with 16x2 LCD w/ Keypad Shield)
+
 The original code, "Chessuino" was a ported chess program to Arduino MEGA by Diego Cueva (June 2014). 
 Based on Micro-Max, version 4.8, a chess program smaller than 2KB (of non-blank source), by H.G. Muller. 
 Port to Atmel ATMega644 and AVR GCC, by Andre Adrian 
