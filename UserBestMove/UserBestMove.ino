@@ -21,7 +21,7 @@
 LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7);        // Pins to control LCD display
 int adc_key_val[5] ={50, 200, 400, 600, 800 };  // Analog values from keypad
 
-char bestMove[5] = {0}; // Initialize best move globally
+char bestMove[5]; // Initialize best move globally
 bool moveReceived = false;
 bool isWhiteSelected = true;
 char inputMove[5];
@@ -29,6 +29,19 @@ char outputMove[6];
 int moveCounter = 0;
 bool isCastle = false;
 bool isCapture = false;
+bool hints_on=false;
+
+//global variables that hold binary digits for source and destination squares
+bool d5src, d4src, d3src, d2src, d1src, d0src;
+bool d5dst, d4dst, d3dst, d2dst, d1dst, d0dst;
+
+#define dp0 33
+#define dp1 31
+#define dp2 29
+#define dp3 27
+#define dp4 25
+#define dp5 23
+#define ENABLE 37
 
 void setup(){
     Wire.begin(engineSA);
@@ -42,6 +55,21 @@ void setup(){
     lastH[0] = 0;
     characters();
     pinMode(13, OUTPUT);
+    pinMode(dp5,OUTPUT);
+    pinMode(dp4,OUTPUT);
+    pinMode(dp3,OUTPUT);
+    pinMode(dp2,OUTPUT);
+    pinMode(dp1,OUTPUT);
+    pinMode(dp0,OUTPUT);
+    pinMode(ENABLE,OUTPUT);
+
+    digitalWrite(dp5,LOW);
+    digitalWrite(dp4,LOW);
+    digitalWrite(dp3,LOW);
+    digitalWrite(dp2,LOW);
+    digitalWrite(dp1,LOW);
+    digitalWrite(dp0,LOW);
+    digitalWrite(ENABLE,LOW);
 }
 
 void loop(){
@@ -202,7 +230,27 @@ void takeMove(){
 
     printMove();
     while(true) {
-      delay(100);
+      int key = waitForKey();
+      delay(200);
+      switch(key){
+            case 0:   // RIGHT
+               break;
+            case 1:   // UP
+               break;
+            case 2:   // DOWN
+               break;
+            case 3:   // LEFT
+               break;
+            case 4:   // SELECT  think
+               if(hints_on) {
+                  digitalWrite(ENABLE,LOW);
+                  hints_on=false;
+               } else if( !hints_on) {
+                  hints_on=true;
+                  user_hint();
+               }
+               break;
+      }
       if (moveReceived) {
          strcpy(c,inputMove);
          Serial.println(c);
@@ -290,13 +338,20 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
       if(p<3&y==E)H^=16;                       /* shift capt.sqr. H if e.p.*/
       t=b[H];if(t&k|p<3&!(y-x&7)-!t)break;     /* capt. own, bad pawn mode */
       i=37*w[t&7]+(t&192);                     /* value of capt. piece t   */
+      // Check if a capture has occurred (i < 0) and update the 'isCapture' flag accordingly
+      if (i < 0) {
+         isCapture = true; // Set the capture flag
+      } else {
+         isCapture = false; // Clear the capture flag
+      }
+      // Check if the move is a castle and update the 'isCastle' flag accordingly
+      if (p == 6 && abs(y - x) == 2) {
+         isCastle = true; // Set the castle flag
+      } else {
+         isCastle = false; // Clear the castle flag
+      }
+      // Update the evaluation score if a capture has occurred
       m=i<0?I:m;                               /* K capture                */
-      //Serial.print("i: "); Serial.println(i);
-      //Serial.print("t: "); Serial.println(t);
-      //Serial.print("K: "); Serial.println(K);
-      if (K==8000) {                                 // Capture move
-         isCapture = true;                     // Set flag for capture
-      }  
       if(m>=l&d>1)goto C;                      /* abort on fail high       */
       v=d-1?e:i-p;                             /* MVV/LVA scoring          */
       if(d-!t>1)                               /* remaining depth          */
@@ -353,12 +408,7 @@ C:if(m>I-M|m<M-I)d=98;                         /* mate holds to any depth  */
   }
  }                                             /*    encoded in X S,8 bits */
  k^=24;                                        /* change sides back        */
- --Z;
- if (p == 6 && abs(y - x) == 2) {            // If the moving piece is the king and the move is a two-square move
-    isCastle = true;                         // Set flag for castle
- }
- //Serial.println(c);
- return m+=m<e;                            /* delayed-loss bonus       */
+ --Z; return m+=m<e;                            /* delayed-loss bonus       */
 }
 
 void serialBoard(){
@@ -453,10 +503,7 @@ int getKey(){
 
 int waitForKey(){
     int res;
-    do{
-        seed++;
-        res = getKey();
-    }while(res<0);
+    res = getKey();
     return res;
 }
 
@@ -651,22 +698,21 @@ void UserBestMove() {
    bkp();
    // Calculate the best move for the user
    k ^= 24; // Switch sides for user move
-   delay(100);
    r = D(-I, I, Q, O, 0, 3); // Calculate human's best move
    k ^= 24; // Switch back sides for computer's move
    delay(100);
-   strcpy(bestMove,c);
    if (moveCounter==0) {
-      strcpy(c,"a1a1\0");
+      strcpy(c,"a1a1");
       moveCounter++;
       return;
    } else if (moveCounter==1) {
       moveCounter++;
    }
+   strcpy(bestMove,c);
    delay(100);
    // Output the best move for the user
-   Serial.print("Human's best move: ");
-   Serial.println(bestMove);
+   //Serial.print("Human's best move: ");
+   //Serial.println(bestMove);
 }
 
 // function that executes whenever data is received from the master
@@ -681,4 +727,123 @@ void receiveEvent() {
    inputMove[4] = 0; // Null-terminate the received char array
    moveReceived=true;
    delay(100);
+}
+
+void light_possible_move(char possible_move[2]) {
+  square_conv_dst(possible_move[0], possible_move[1]);
+  //test segment printing resulting binary to serial monitor
+  Serial.print("Dst: ");
+  Serial.print((int)d5dst); Serial.print((int)d4dst);
+  Serial.print((int)d3dst); Serial.print((int)d2dst);
+  Serial.print((int)d1dst); Serial.println((int)d0dst);
+  /*
+  //loop to power pins based on binary digits
+  while(hints_on) // while user's turn {
+	if(d5dst) dp5 = HIGH; else dp5 = LOW;
+	if(d4dst) dp4 = HIGH; else dp4 = LOW;
+	if(d3dst) dp3 = HIGH; else dp3 = LOW;
+	if(d2dst) dp2 = HIGH; else dp2 = LOW;
+	if(d1dst) dp1 = HIGH; else dp1 = LOW;
+	if(d0dst) dp0 = HIGH; else dp0 = LOW;
+  }
+  */
+  delay(1000); //wait a second before showing another possible move
+}
+
+void user_hint() {   // Calculate and output human's best move
+   //separate functions that do the same thing - could easily be condensed if
+   //necessary by separating into one function to convert each digit, but this
+   //would make the main code longer
+   Serial.print("Human's best move: "); Serial.println(bestMove);
+   square_conv_src(bestMove[0], bestMove[1]);
+   square_conv_dst(bestMove[2], bestMove[3]);
+   /*test loop printing resulting binary to serial monitor
+   Serial.print("Testing "); Serial.println(best_move);
+   Serial.print("Src: ");
+   Serial.print((int)d5src); Serial.print((int)d4src);
+   Serial.print((int)d3src); Serial.print((int)d2src);
+   Serial.print((int)d1src); Serial.println((int)d0src);
+   Serial.print("Dst: ");
+   Serial.print((int)d5dst); Serial.print((int)d4dst);
+   Serial.print((int)d3dst); Serial.print((int)d2dst);
+   Serial.print((int)d1dst); Serial.println((int)d0dst); */
+
+  //loop to power pins based on binary digits
+   if(hints_on) {
+      digitalWrite(ENABLE,HIGH);
+
+      if(d5src) digitalWrite(dp5, HIGH); else digitalWrite(dp5, LOW);
+      if(d4src) digitalWrite(dp4, HIGH); else digitalWrite(dp4, LOW);
+      if(d3src) digitalWrite(dp3, HIGH); else digitalWrite(dp3, LOW);
+      if(d2src) digitalWrite(dp2, HIGH); else digitalWrite(dp2, LOW);
+      if(d1src) digitalWrite(dp1, HIGH); else digitalWrite(dp1, LOW);
+      if(d0src) digitalWrite(dp0, HIGH); else digitalWrite(dp0, LOW);
+
+      delay(2000);
+
+      if(d5dst) digitalWrite(dp5, HIGH); else digitalWrite(dp5, LOW);
+      if(d4dst) digitalWrite(dp4, HIGH); else digitalWrite(dp4, LOW);
+      if(d3dst) digitalWrite(dp3, HIGH); else digitalWrite(dp3, LOW);
+      if(d2dst) digitalWrite(dp2, HIGH); else digitalWrite(dp2, LOW);
+      if(d1dst) digitalWrite(dp1, HIGH); else digitalWrite(dp1, LOW);
+      if(d0dst) digitalWrite(dp0, HIGH); else digitalWrite(dp0, LOW);
+   } else {
+      digitalWrite(ENABLE,LOW);
+   }
+}
+
+//converts source square to binary (changes global variables)
+void square_conv_src (char let, char num) {
+  if(num == '5' | num == '6' | num == '7' | num == '8')
+    d5src = false;
+  else
+    d5src = true;
+  if(num == '3' | num == '4' | num == '7' | num == '8')
+    d4src = false;
+  else
+    d4src = true;
+  if(num == '2' | num == '4' | num == '6' | num == '8')
+    d3src = false;
+  else
+    d3src = true;
+  if(let == 'e' | let == 'f' | let == 'g' | let == 'h')
+    d2src = true;
+  else
+    d2src = false;
+  if(let == 'c' | let == 'd' | let == 'g' | let == 'h')
+    d1src = true;
+  else
+    d1src = false;
+  if(let == 'b' | let == 'd' | let == 'f' | let == 'h')
+    d0src = true;
+  else
+    d0src = false;
+}
+
+//converts destination square to binary (changes global variables)
+void square_conv_dst (char let, char num) {
+  if(num == '5' | num == '6' | num == '7' | num == '8')
+    d5dst = false;
+  else
+    d5dst = true;
+  if(num == '3' | num == '4' | num == '7' | num == '8')
+    d4dst = false;
+  else
+    d4dst = true;
+  if(num == '2' | num == '4' | num == '6' | num == '8')
+    d3dst = false;
+  else
+    d3dst = true;
+  if(let == 'e' | let == 'f' | let == 'g' | let == 'h')
+    d2dst = true;
+  else
+    d2dst = false;
+  if(let == 'c' | let == 'd' | let == 'g' | let == 'h')
+    d1dst = true;
+  else
+    d1dst = false;
+  if(let == 'b' | let == 'd' | let == 'f' | let == 'h')
+    d0dst = true;
+  else
+    d0dst = false;
 }
