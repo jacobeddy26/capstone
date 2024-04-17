@@ -151,11 +151,18 @@ void setup() {
 
 void loop() {
    if (moveReady) {
-      makeMove();
+      if (receivedMove[0] == 'o') {
+         // Castle
+         //castle(cas)
+      } else if (receivedMove[0] == 'x') {
+         captureAt()
+      } else {
+         // Normal
+         makeMove();
+      }
    }
 }
-
-void pickUpAt(int innerAngle, int outerAngle) {
+void pickUpAt(int innerAngle, int outerAngle, int absoluteAngle) {
   
   long innerSteps = -2.88*innerAngle;
   //Serial.println(innerSteps);
@@ -173,11 +180,23 @@ void pickUpAt(int innerAngle, int outerAngle) {
     Outer.move(outerSteps);
   }
    delay(100);
-  while(Outer.currentPosition() != Outer.targetPosition()) {
-   Outer.run();
+if (absoluteAngle < 0 | absoluteAngle > 300) {
+    while(Inner.currentPosition() != Inner.targetPosition()) {
+      Inner.run();
+    }
+
+    while(Outer.currentPosition() != Outer.targetPosition()) {
+      Outer.run();
+    }
   }
-  while(Inner.currentPosition() != Inner.targetPosition()) {
-    Inner.run();
+  else {
+    while(Outer.currentPosition() != Outer.targetPosition()) {
+      Outer.run();
+    }
+
+   while(Inner.currentPosition() != Inner.targetPosition()) {
+      Inner.run();
+    }
   }
   digitalWrite(actPos, HIGH);
   digitalWrite(actNeg, LOW);
@@ -190,7 +209,7 @@ void pickUpAt(int innerAngle, int outerAngle) {
   holding = 1;
 }
 
-void putDownAt(int innerAngle, int outerAngle) {
+void putDownAt(int innerAngle, int outerAngle, int absoluteAngle) {
    Serial.println("Put Down");
   
   int innerSteps = (int)(-2.88*innerAngle);
@@ -209,14 +228,24 @@ void putDownAt(int innerAngle, int outerAngle) {
     Outer.move(outerSteps);
   }
 
-  while(Outer.currentPosition() != Outer.targetPosition()) {
-    Outer.run();
-  }
+ if (absoluteAngle < 0 | absoluteAngle > 300) {
+    while(Inner.currentPosition() != Inner.targetPosition()) {
+      Inner.run();
+    }
 
-  while(Inner.currentPosition() != Inner.targetPosition()) {
-    Inner.run();
+    while(Outer.currentPosition() != Outer.targetPosition()) {
+      Outer.run();
+    }
   }
+  else {
+    while(Outer.currentPosition() != Outer.targetPosition()) {
+      Outer.run();
+    }
 
+   while(Inner.currentPosition() != Inner.targetPosition()) {
+      Inner.run();
+    }
+  }
   digitalWrite(actPos, HIGH);
   digitalWrite(actNeg, LOW);
   delay(5000);  
@@ -253,17 +282,8 @@ void receiveEvent() {
       Serial.println(receivedMove); // Print received data to serial monitor
       parseChessMove(receivedMove);
 
-      if (receivedMove[0] == 'o') {
-         // Castle
-         //Serial.println("Castle");
-      } else if (receivedMove[0] == 'x') {
-         // Capture
-         //Serial.println("Capture");
-         // removeCapture()
-      } else {
-         // Normal
-         moveReady=true;
-      }
+      moveReady=true;
+
    }
 }
 
@@ -276,20 +296,6 @@ void makeMove() {
   ChessboardSquare &srcSquare = board.getSquare(srcX,srcY);   // Source Square Info
   ChessboardSquare &destSquare = board.getSquare(destX,destY);  // Dest Square Info
 
-  /*
-  Serial.print("Source Square ");
-  Serial.print(srcSquare.getName());
-  Serial.print(": theta1 = ");
-  Serial.print(srcSquare.getTheta1());
-  Serial.print(", theta2 = ");
-  Serial.println(srcSquare.getTheta2());
-  Serial.print("Destination Square ");
-  Serial.print(destSquare.getName());
-  Serial.print(": theta1 = ");
-  Serial.print(destSquare.getTheta1());
-  Serial.print(", theta2 = ");
-  Serial.println(destSquare.getTheta2());
-   */
   long innerFirstAngle = 0;
   long outerFirstAngle = 0;
   long innerSecondAngle = 0;
@@ -301,14 +307,28 @@ void makeMove() {
   outerSecondAngle = destSquare.getTheta2();
 
   if (innerFirstAngle != 0) {
-    pickUpAt(innerFirstAngle,outerFirstAngle);
+    pickUpAt(innerFirstAngle,outerFirstAngle, outerFirstAngle);
   }
 
   double innerPlaceAngle = innerSecondAngle - innerFirstAngle;
-  double outerPlaceAngle = innerSecondAngle - innerFirstAngle;
+  double outerPlaceAngle = outerSecondAngle - outerFirstAngle;
 
   if (innerPlaceAngle != 0) {
-    putDownAt(innerPlaceAngle,outerPlaceAngle);
+    putDownAt(innerPlaceAngle,outerPlaceAngle,outerSecondAngle);
+  }
+
+  if (outerSecondAngle<0) {
+   Outer.move(5*outerSecondAngle);
+   while(Outer.currentPosition() != Outer.targetPosition()) {
+      Outer.run();
+   }
+  }
+
+  if (outerSecondAngle>299) {
+   Outer.move(50);
+   while(Outer.currentPosition() != Outer.targetPosition()) {
+      Outer.run();
+   }
   }
 
   Inner.setMaxSpeed(225);
@@ -345,4 +365,25 @@ void makeMove() {
   outerSecondAngle = 0;
   
   moveReady=false;
+}
+
+void captureAt(int innerCapAt, int outerCapAt, int innerCapFrom, int outerCapFrom, int absoluteAngle) {
+
+  pickUpAt(innerCapAt,outerCapAt,absoluteAngle);
+
+  long innerCapPoint = 137 - innerCapAt;
+  long outerCapPoint = 295 - outerCapAt;
+
+  putDownAt(innerCapPoint,outerCapPoint,absoluteAngle);
+
+  long innerCapMove = innerCapFrom - 137;
+  long outerCapMove = outerCapFrom - 295;
+
+  pickUpAt(innerCapMove,outerCapMove,absoluteAngle);
+
+  long innerFinalMove = innerCapAt - innerCapFrom;
+  long outerFinalMove = outerCapAt - outerCapFrom;
+
+  putDownAt(innerFinalMove, outerFinalMove, absoluteAngle);
+
 }
