@@ -496,8 +496,7 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
    }                                             /*    encoded in X S,8 bits */
    //Serial.print("D c17: "); Serial.println(c);
    k^=24;                                        /* change sides back        */
-   --Z;
-   Serial.print("D: "); Serial.println(c);
+   //Serial.print("D: "); Serial.println(c);
    //Serial.print("D c18: "); Serial.println(c);
    --Z;return m+=m<e;                            /* delayed-loss bonus       */
 }

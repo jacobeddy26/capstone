@@ -30,6 +30,8 @@ int moveCounter = 0;
 bool isCastle = false;
 bool isCapture = false;
 bool hints_on=false;
+bool userMove = false;
+int count = 0;
 
 //global variables that hold binary digits for source and destination squares
 bool d5src, d4src, d3src, d2src, d1src, d0src;
@@ -54,6 +56,7 @@ void setup(){
     
     lastH[0] = 0;
     characters();
+    countWhitePieces();
     pinMode(13, OUTPUT);
     pinMode(dp5,OUTPUT);
     pinMode(dp4,OUTPUT);
@@ -73,7 +76,9 @@ void setup(){
 }
 
 void loop(){
+   //serialBoard();
     int r;
+    int tempCount = count;
     digitalWrite(13, LOW);
   
     // Print last movements
@@ -127,6 +132,12 @@ void loop(){
             lcd.print("ERR DB");
             gameOver();
         }
+
+       countWhitePieces();
+       Serial.print("count: "); Serial.print(count); Serial.print(" tempCount: "); Serial.println(tempCount);
+       if(tempCount>count) {
+         isCapture=true;
+       }
         
        outputMove[0]='?';
        outputMove[1]=c[0];
@@ -135,23 +146,17 @@ void loop(){
        outputMove[4]=c[3];
        // Throw a flag if the calculated move is a capture or castle
        if (isCapture) {                             // Set flag for capture
-          outputMove[0]='x';
-          Wire.beginTransmission(scaraSA);          // Transmit capture move
-          Wire.write(outputMove); 
-          Wire.endTransmission();                             
+          outputMove[0]='x';                      
        } else if (isCastle) {                       // Set flag for castle
-          outputMove[0]='o';
-          Wire.beginTransmission(scaraSA);          // Transmit castle move
-          Wire.write(outputMove); 
-          Wire.endTransmission();                   
-       } else {
-          Wire.beginTransmission(scaraSA);          // Transmit normal move
-          Wire.write(outputMove); 
-          Wire.endTransmission();
+          outputMove[0]='o';               
        }
+       Wire.beginTransmission(boardSA);          // Transmit normal move
+       Wire.write(outputMove); 
+       Wire.endTransmission();
        Serial.print("Output Move: "); 
        Serial.print(outputMove); Serial.println("\n");
-
+       isCapture = false;
+       isCastle = false;
         
        strcpy(lastM, c);                         /* Valid ARDUINO movement */
        return;
@@ -174,6 +179,12 @@ void loop(){
         gameOver();                           /* 1. b1c3  c7c5?       2. f2f4? */
     }
 
+    countWhitePieces();
+    Serial.print("count: "); Serial.print(count); Serial.print(" tempCount: "); Serial.println(tempCount);
+    if(tempCount>count) {
+       isCapture=true;
+    }
+
     outputMove[0]='?';
     outputMove[1]=c[0];
     outputMove[2]=c[1];
@@ -182,23 +193,16 @@ void loop(){
     // Throw a flag if the calculated move is a capture or castle
     if (isCapture) {                             // Set flag for capture
        outputMove[0]='x';
-       Wire.beginTransmission(scaraSA);          // Transmit capture move
-       Wire.write(outputMove); 
-       Wire.endTransmission();
-       isCapture=false;                             
-    } else if (isCastle) {                       // Set flag for castle
+    } else if (isCastle) {                       // Set flag for castle                   
        outputMove[0]='o';
-       Wire.beginTransmission(scaraSA);          // Transmit castle move
-       Wire.write(outputMove); 
-       Wire.endTransmission();
-       isCastle=false;                   
-    } else {
-       Wire.beginTransmission(scaraSA);          // Transmit normal move
-       Wire.write(outputMove); 
-       Wire.endTransmission();
     }
+    Wire.beginTransmission(boardSA);          // Transmit normal move
+    Wire.write(outputMove); 
+    Wire.endTransmission();
     Serial.print("Output Move: "); 
     Serial.print(outputMove); Serial.println("\n");
+    isCapture = false;
+    isCastle = false;
     
     strcpy(lastM, c);                         /* Valid ARDUINO movement */
 
@@ -305,6 +309,7 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
  short m,v,i,P,V,s;
  unsigned char t,p,u,x,y,X,Y,H,B,j,d,h,F,G,C;
  signed char r;
+ isCapture=false;
  if (++Z>30) {                                     /* stack underrun check */
   breakpoint=1;               /* AVR Studio 4 Breakpoint for stack underrun */
   myputchar('u');
@@ -338,26 +343,13 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
       if(p<3&y==E)H^=16;                       /* shift capt.sqr. H if e.p.*/
       t=b[H];if(t&k|p<3&!(y-x&7)-!t)break;     /* capt. own, bad pawn mode */
       i=37*w[t&7]+(t&192);                     /* value of capt. piece t   */
-      // Check if a capture has occurred (i < 0) and update the 'isCapture' flag accordingly
-      if (i < 0) {
-         isCapture = true; // Set the capture flag
-      } else {
-         isCapture = false; // Clear the capture flag
-      }
-      // Check if the move is a castle and update the 'isCastle' flag accordingly
-      if (p == 6 && abs(y - x) == 2) {
-         isCastle = true; // Set the castle flag
-      } else {
-         isCastle = false; // Clear the castle flag
-      }
-      // Update the evaluation score if a capture has occurred
       m=i<0?I:m;                               /* K capture                */
       if(m>=l&d>1)goto C;                      /* abort on fail high       */
       v=d-1?e:i-p;                             /* MVV/LVA scoring          */
       if(d-!t>1)                               /* remaining depth          */
       {v=p<6?b[x+8]-b[y+8]:0;                  /* center positional pts.   */
        b[G]=b[H]=b[x]=0;b[y]=u|32;             /* do move, set non-virgin  */
-       if(!(G&M))b[F]=k+6,v+=50;               /* castling: put R & score  */
+       if(!(G&M))b[F]=k+6,v+=50,isCastle=true; /* castling: put R & score  */
        v-=p-4|R>29?0:20;                       /* penalize mid-game K move */
        if(p<3)                                 /* pawns:                   */
        {v-=9*((x-2&M||b[x-2]-u)+               /* structure, undefended    */
@@ -379,7 +371,7 @@ short D(short q, short l, short e, unsigned char E, unsigned char z, unsigned ch
        W(s>q&++C<d);v=s;
        if(z&&K-I&&v+I&&x==K&y==L)              /* move pending & in root:  */
        {Q=-e-i;O=F;                            /*   exit if legal & found  */
-        R+=i>>7;--Z;return l;                  /* captured non-P material  */
+        R+=i>>7;--Z; return l;                  /* captured non-P material  */
        }
        b[G]=k+6;b[F]=b[y]=0;b[x]=u;b[H]=t;     /* undo move,G can be dummy */
       }
@@ -408,7 +400,7 @@ C:if(m>I-M|m<M-I)d=98;                         /* mate holds to any depth  */
   }
  }                                             /*    encoded in X S,8 bits */
  k^=24;                                        /* change sides back        */
- --Z; return m+=m<e;                            /* delayed-loss bonus       */
+ --Z;return m+=m<e;                            /* delayed-loss bonus       */
 }
 
 void serialBoard(){
@@ -693,6 +685,7 @@ void putPiece(int x, int y, char piece){
 }
 
 void UserBestMove() {
+   userMove=true;
    int r;
    // Save the current state of the board
    bkp();
@@ -700,7 +693,7 @@ void UserBestMove() {
    k ^= 24; // Switch sides for user move
    r = D(-I, I, Q, O, 0, 3); // Calculate human's best move
    k ^= 24; // Switch back sides for computer's move
-   delay(100);
+   delay(200);
    if (moveCounter==0) {
       strcpy(c,"a1a1");
       moveCounter++;
@@ -709,16 +702,18 @@ void UserBestMove() {
       moveCounter++;
    }
    strcpy(bestMove,c);
-   delay(100);
+   delay(200);
    // Output the best move for the user
-   //Serial.print("Human's best move: ");
-   //Serial.println(bestMove);
+   Serial.print("Human's best move: ");
+   Serial.println(bestMove);
+   userMove=false;
+   isCastle=false;
+   isCapture=false;
 }
 
 // function that executes whenever data is received from the master
 // this function is registered as an event,  see setup()
 void receiveEvent() {
-   Serial.println("received");
    int i = 0;
    while (Wire.available() && i < 5) {
       inputMove[i] = Wire.read(); // Read char data
@@ -846,4 +841,15 @@ void square_conv_dst (char let, char num) {
     d0dst = true;
   else
     d0dst = false;
+}
+
+void countWhitePieces() {
+    count = 0;
+    for (int i = 0; i < 129; i++) {
+        if ((b[i] & 0x08) && 
+               ((i>=0 && i<8) || (i>=16 && i<24) || (i>=32 && i<40) || (i>=48 && i<56) || 
+                  (i>=64 && i<72) || (i>=80 && i<88) || (i>=96 && i<104) || (i>=112 && i<120))) { // Check if the index is valid and the piece is white
+            count++;
+        }
+    }
 }
