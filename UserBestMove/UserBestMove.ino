@@ -227,23 +227,32 @@ void takeMove(){
     {
       return;
     }
+    int sss=0;
     
     lcd.setCursor(0,1);
     lcd.print("                ");
     printMN(mn, 1);
 
     printMove();
-    while(true) {
+    for(;;) {
       int key = waitForKey();
       delay(200);
       switch(key){
             case 0:   // RIGHT
+               if(sss==0 && x1 <7){ x1++;}
+               if(sss==1 && x2 <7){ x2++;}
                break;
             case 1:   // UP
+               if(sss==0 && y1 <7){ y1++;}
+               if(sss==1 && y2 <7){ y2++;}
                break;
             case 2:   // DOWN
+                if(sss==0 && y1 >0){ y1--;}
+                if(sss==1 && y2 >0){ y2--;}
                break;
             case 3:   // LEFT
+                if(sss==0 && x1 >0){ x1--;}
+                if(sss==1 && x2 >0){ x2--;}
                break;
             case 4:   // SELECT  think
                if(hints_on) {
@@ -262,6 +271,7 @@ void takeMove(){
          delay(100);
          break;
       }
+      printMove();
    }
 }
 
@@ -495,7 +505,10 @@ int getKey(){
 
 int waitForKey(){
     int res;
-    res = getKey();
+    do{
+        seed++;
+        res = getKey();
+    }while(res<0);
     return res;
 }
 
@@ -704,13 +717,14 @@ void UserBestMove() {
    strcpy(bestMove,c);
    delay(200);
    // Output the best move for the user
-   Serial.print("Human's best move: ");
-   Serial.println(bestMove);
+   //Serial.print("Human's best move: ");
+   //Serial.println(bestMove);
    userMove=false;
    isCastle=false;
    isCapture=false;
 }
 
+/*
 // function that executes whenever data is received from the master
 // this function is registered as an event,  see setup()
 void receiveEvent() {
@@ -731,7 +745,7 @@ void light_possible_move(char possible_move[2]) {
   Serial.print((int)d5dst); Serial.print((int)d4dst);
   Serial.print((int)d3dst); Serial.print((int)d2dst);
   Serial.print((int)d1dst); Serial.println((int)d0dst);
-  /*
+  
   //loop to power pins based on binary digits
   while(hints_on) // while user's turn {
 	if(d5dst) dp5 = HIGH; else dp5 = LOW;
@@ -741,9 +755,9 @@ void light_possible_move(char possible_move[2]) {
 	if(d1dst) dp1 = HIGH; else dp1 = LOW;
 	if(d0dst) dp0 = HIGH; else dp0 = LOW;
   }
-  */
+
   delay(1000); //wait a second before showing another possible move
-}
+} */
 
 void user_hint() {   // Calculate and output human's best move
    //separate functions that do the same thing - could easily be condensed if
