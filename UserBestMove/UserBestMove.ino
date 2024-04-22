@@ -237,7 +237,7 @@ void takeMove(){
     for(;;) {
       int key = waitForKey();
       delay(200);
-      switch(key){
+      switch(key) {
             case 0:   // RIGHT
                if(sss==0 && x1 <7){ x1++;}
                if(sss==1 && x2 <7){ x2++;}
@@ -255,13 +255,32 @@ void takeMove(){
                 if(sss==1 && x2 >0){ x2--;}
                break;
             case 4:   // SELECT  think
-               if(hints_on) {
-                  digitalWrite(ENABLE,LOW);
-                  hints_on=false;
-               } else if( !hints_on) {
-                  hints_on=true;
-                  user_hint();
-               }
+               if(sss==1) {
+                    if(x2>=0 && y2>=0) {
+                        c[0] = x1+'a';
+                        c[1] = y1+'1';
+                        c[2] = x2+'a';
+                        c[3] = y2+'1';
+                        c[4] = 0;
+                        // No tone to validate movement
+                        return;
+                    }else{
+                        // Move invalid
+                    }                        
+               }            
+               if(sss==0){
+                  if(x1>=0 && y1>=0){
+                     sss=1;
+                  }else{
+                     if(hints_on) {
+                        digitalWrite(ENABLE,LOW);
+                        hints_on=false;
+                     } else if( !hints_on) {
+                        hints_on=true;
+                        user_hint();
+                     }
+                  }
+               } 
                break;
       }
       if (moveReceived) {
