@@ -150,7 +150,7 @@ void loop(){
        } else if (isCastle) {                       // Set flag for castle
           outputMove[0]='o';               
        }
-       Wire.beginTransmission(boardSA);          // Transmit normal move
+       Wire.beginTransmission(scaraSA);          // Transmit normal move
        Wire.write(outputMove); 
        Wire.endTransmission();
        Serial.print("Output Move: "); 
@@ -196,7 +196,7 @@ void loop(){
     } else if (isCastle) {                       // Set flag for castle                   
        outputMove[0]='o';
     }
-    Wire.beginTransmission(boardSA);          // Transmit normal move
+    Wire.beginTransmission(scaraSA);          // Transmit normal move
     Wire.write(outputMove); 
     Wire.endTransmission();
     Serial.print("Output Move: "); 
