@@ -35,8 +35,8 @@ int holding=0;
 // Define struct scaraAngle
 struct scaraAngle {
    const char *square;
-   double theta1;
-   double theta2;
+   double innerAngle;
+   double outerAngle;
 };
 
 // Class to represent a chessboard square
@@ -47,16 +47,16 @@ private:
 public:
    // Constructors
    ChessboardSquare() : angles({nullptr, 0.0, 0.0}) {}
-   ChessboardSquare(const char *square, double theta1, double theta2) : angles({square, theta1, theta2}) {}
+   ChessboardSquare(const char *square, double innerAngle, double outerAngle) : angles({square, innerAngle, outerAngle}) {}
 
    // Getter for theta1
-   double getTheta1() const {
-      return angles.theta1;
+   double getInnerAngle() const {
+      return angles.innerAngle;
    }
 
    // Getter for theta2
-   double getTheta2() const {
-      return angles.theta2;
+   double getOuterAngle() const {
+      return angles.outerAngle;
    }
 
    // Getter for square name
@@ -76,7 +76,7 @@ public:
       // Initialize angles for each square on the chessboard
       for (uint8_t row = 0; row < 8; ++row) {
          for (uint8_t col = 0; col < 8; ++col) {
-            squares[row][col] = ChessboardSquare(hardcodedAngles[row][col]->square, hardcodedAngles[row][col]->theta1, hardcodedAngles[row][col]->theta2);
+            squares[row][col] = ChessboardSquare(hardcodedAngles[row][col]->square, hardcodedAngles[row][col]->innerAngle, hardcodedAngles[row][col]->outerAngle);
          }
       }
    }
@@ -90,6 +90,7 @@ public:
 };
 
 // Hardcoded names and angle values for each chessboard position
+// Entry: {"square_name", innerAngle, outerAngle}
 
 const scaraAngle hardcodedAngles[8][8][3] = {
    {{"a1", 114.0, 21.0}, {"a2", 127.0, 9.0}, {"a3", 158.0, 5.0}, {"a4", 183.0, 11.0}, {"a5", 8.0, 5.0}, {"a6", 8.0, 6.0}, {"a7", 8.0, 7.0}, {"a8", 252.0, 16.0}},
@@ -105,157 +106,171 @@ const scaraAngle hardcodedAngles[8][8][3] = {
 Chessboard board(hardcodedAngles);
 
 bool moveReady = false;
+char receivedMove[6];
 
 void setup() {
-  Serial.begin(115200);
-  Wire.begin(scaraSA);
-  Wire.onReceive(receiveEvent);
+   Serial.begin(115200);
+   Wire.begin(scaraSA);
+   Wire.onReceive(receiveEvent);
 
-  pinMode(switch1,INPUT_PULLUP);
-  pinMode(switch2,INPUT_PULLUP);
-  pinMode(actPos, OUTPUT);
-  pinMode(actNeg,OUTPUT);
-  pinMode(mag, OUTPUT);
-  digitalWrite(mag,LOW);
+   pinMode(switch1,INPUT_PULLUP);
+   pinMode(switch2,INPUT_PULLUP);
+   pinMode(actPos, OUTPUT);
+   pinMode(actNeg,OUTPUT);
+   pinMode(mag, OUTPUT);
+   digitalWrite(mag,LOW);
 
-  Inner.setMaxSpeed(225);
-  Inner.setSpeed(75);
-  Outer.setMaxSpeed(225);
-  Outer.setSpeed(75);
+   Inner.setMaxSpeed(225);
+   Inner.setSpeed(75);
+   Outer.setMaxSpeed(225);
+   Outer.setSpeed(75);
 
-  while (switchValue1 == 0) {
-    Inner.runSpeed();
-    if (digitalRead(switch1) == HIGH) {
-      switchValue1 = 1;
-    }
-    else {
-      switchValue1 = 0;
-    }
-  }
+   while (switchValue1 == 0) {
+      Inner.runSpeed();
+      if (digitalRead(switch1) == HIGH) {
+         switchValue1 = 1;
+      } else {
+         switchValue1 = 0;
+      }
+   }
 
-  while (switchValue2 == 0) {
-    Outer.runSpeed();
-    if (digitalRead(switch2) == HIGH) {
-      switchValue2 = 1;
-    }
-    else {
-      switchValue2 = 0;
-    }
-  }
+   while (switchValue2 == 0) {
+      Outer.runSpeed();
+      if (digitalRead(switch2) == HIGH) {
+         switchValue2 = 1;
+      } else {
+         switchValue2 = 0;
+      }
+   }
 
-  Inner.setMaxSpeed(90);
-  Inner.setAcceleration(30);
-  Outer.setMaxSpeed(90);
-  Outer.setAcceleration(30);
+   Inner.setMaxSpeed(90);
+   Inner.setAcceleration(30);
+   Outer.setMaxSpeed(90);
+   Outer.setAcceleration(30);
 }
 
 void loop() {
    if (moveReady) {
+      char srcX = src[0];
+      uint8_t srcY = atoi(&src[1]);
+      char destX = dest[0];
+      uint8_t destY = atoi(&dest[1]);
+
+      ChessboardSquare &srcSquare = board.getSquare(srcX,srcY);   // Source Square Info
+      ChessboardSquare &destSquare = board.getSquare(destX,destY);  // Dest Square Info
+      
       if (receivedMove[0] == 'o') {
          // Castle
-         //castle(cas)
+         castle(srcSquare,destSquare);
       } else if (receivedMove[0] == 'x') {
-         captureAt()
+         captureAt(srcSquare,destSquare);
       } else {
          // Normal
-         makeMove();
+         pickUpAt(srcSquare);
+         putDownAt(destSquare);
       }
+      moveReady=false;
    }
 }
-void pickUpAt(int innerAngle, int outerAngle, int absoluteAngle) {
+void pickUpAt(ChessboardSquare &square) {
+
+   int innerAngle=square.getInnerAngle();
+   int outerAngle=square.getOuterAngle();
   
-  long innerSteps = -2.88*innerAngle;
-  //Serial.println(innerSteps);
-  if (innerSteps>0) {
-    Inner.move(innerSteps);
-  } else {
-    Inner.move(innerSteps);
-  }
-  delay(100);
-  long outerSteps = -2.88*outerAngle;
-  //Serial.println(outerSteps);
-  if (outerSteps>0) {
-    Outer.move(outerSteps);
-  } else {
-    Outer.move(outerSteps);
-  }
+   long innerSteps = -2.88*innerAngle;
+   //Serial.println(innerSteps);
+   if (innerSteps>0) {
+      Inner.move(innerSteps);
+   } else {
+      Inner.move(innerSteps);
+   }
    delay(100);
-if (absoluteAngle < 0 | absoluteAngle > 300) {
-    while(Inner.currentPosition() != Inner.targetPosition()) {
-      Inner.run();
-    }
+   long outerSteps = -2.88*outerAngle;
+   //Serial.println(outerSteps);
+   if (outerSteps>0) {
+      Outer.move(outerSteps);
+   } else {
+      Outer.move(outerSteps);
+   }
+   delay(100);
 
-    while(Outer.currentPosition() != Outer.targetPosition()) {
-      Outer.run();
-    }
-  }
-  else {
-    while(Outer.currentPosition() != Outer.targetPosition()) {
-      Outer.run();
-    }
+   int absoluteAngle = Outer.currentPosition();
 
-   while(Inner.currentPosition() != Inner.targetPosition()) {
-      Inner.run();
-    }
-  }
-  digitalWrite(actPos, HIGH);
-  digitalWrite(actNeg, LOW);
-  delay(5000);  
-  digitalWrite(mag,HIGH);
-  delay(3000);
-  digitalWrite(actPos, LOW);
-  digitalWrite(actNeg, HIGH);
-  delay(5000);
-  holding = 1;
+   if (absoluteAngle < 0 | absoluteAngle > 300) {
+      while(Inner.currentPosition() != Inner.targetPosition()) {
+         Inner.run();
+      }
+
+      while(Outer.currentPosition() != Outer.targetPosition()) {
+         Outer.run();
+      }
+   } else {
+      while(Outer.currentPosition() != Outer.targetPosition()) {
+         Outer.run();
+      }
+
+      while(Inner.currentPosition() != Inner.targetPosition()) {
+         Inner.run();
+      }
+   }
+   digitalWrite(actPos, HIGH);
+   digitalWrite(actNeg, LOW);
+   delay(5000);  
+   digitalWrite(mag,HIGH);
+   delay(3000);
+   digitalWrite(actPos, LOW);
+   digitalWrite(actNeg, HIGH);
+   delay(5000);
+   holding = 1;
 }
 
-void putDownAt(int innerAngle, int outerAngle, int absoluteAngle) {
-   Serial.println("Put Down");
-  
-  int innerSteps = (int)(-2.88*innerAngle);
-  if (innerSteps>0) {
-    Inner.move(innerSteps);
-  }
-  else {
-    Inner.move(innerSteps);
-  }
+void putDownAt(ChessboardSquare &square) {
+   //Serial.println("Put Down");
+   int innerAngle=square.getInnerAngle();
+   int outerAngle=square.getOuterAngle();
 
-  int outerSteps = (int)(-2.88*outerAngle);
-  if (outerSteps>0) {
-    Outer.move(outerSteps);
-  }
-  else {
-    Outer.move(outerSteps);
-  }
+   int innerSteps = (int)(-2.88*innerAngle);
+   if (innerSteps>0) {
+      Inner.move(innerSteps);
+   } else {
+      Inner.move(innerSteps);
+   }
 
- if (absoluteAngle < 0 | absoluteAngle > 300) {
-    while(Inner.currentPosition() != Inner.targetPosition()) {
-      Inner.run();
-    }
+   int outerSteps = (int)(-2.88*outerAngle);
+   if (outerSteps>0) {
+      Outer.move(outerSteps);
+   } else {
+      Outer.move(outerSteps);
+   }
 
-    while(Outer.currentPosition() != Outer.targetPosition()) {
-      Outer.run();
-    }
-  }
-  else {
-    while(Outer.currentPosition() != Outer.targetPosition()) {
-      Outer.run();
-    }
+   int absoluteAngle = Outer.currentPosition();
 
-   while(Inner.currentPosition() != Inner.targetPosition()) {
-      Inner.run();
-    }
-  }
-  digitalWrite(actPos, HIGH);
-  digitalWrite(actNeg, LOW);
-  delay(5000);  
-  digitalWrite(mag,LOW);
-  delay(3000);
-  digitalWrite(actPos, LOW);
-  digitalWrite(actNeg, HIGH);
-  delay(5000);
-  holding = 0;
+   if (absoluteAngle < 0 | absoluteAngle > 300) {
+      while(Inner.currentPosition() != Inner.targetPosition()) {
+         Inner.run();
+      }
 
+      while(Outer.currentPosition() != Outer.targetPosition()) {
+         Outer.run();
+      }
+   } else {
+      while(Outer.currentPosition() != Outer.targetPosition()) {
+         Outer.run();
+      }
+
+      while(Inner.currentPosition() != Inner.targetPosition()) {
+         Inner.run();
+      }
+   }
+   digitalWrite(actPos, HIGH);
+   digitalWrite(actNeg, LOW);
+   delay(5000);  
+   digitalWrite(mag,LOW);
+   delay(3000);
+   digitalWrite(actPos, LOW);
+   digitalWrite(actNeg, HIGH);
+   delay(5000);
+   holding = 0;
 }
 
 // Function to convert chess notation to source and destination squares
@@ -269,7 +284,6 @@ void parseChessMove(char move[6]) {
 // Function to receive data over I2C
 void receiveEvent() {
    // Define move received from I2C
-   char receivedMove[6];
    int i = 0;
    while (Wire.available() && i < 5) {
       receivedMove[i] = Wire.read(); // Read char data
@@ -281,109 +295,96 @@ void receiveEvent() {
       Serial .print("Received move: ");
       Serial.println(receivedMove); // Print received data to serial monitor
       parseChessMove(receivedMove);
-
       moveReady=true;
-
    }
 }
 
-void makeMove() {
-  char srcX = src[0];
-  uint8_t srcY = atoi(&src[1]);
-  char destX = dest[0];
-  uint8_t destY = atoi(&dest[1]);
+void captureAt(ChessboardSquare &srcSquare, ChessboardSquare &destSquare) {
 
-  ChessboardSquare &srcSquare = board.getSquare(srcX,srcY);   // Source Square Info
-  ChessboardSquare &destSquare = board.getSquare(destX,destY);  // Dest Square Info
+   int innerCapAt = destSquare.getInnerAngle(); 
+   int outerCapAt = destSquare.getOuterAngle();
+   int innerCapFrom = srcSquare.getInnerAngle();
+   int outerCapFrom = srcSquare.getOuterAngle();
 
-  long innerFirstAngle = 0;
-  long outerFirstAngle = 0;
-  long innerSecondAngle = 0;
-  long outerSecondAngle = 0;
-
-  innerFirstAngle = srcSquare.getTheta1();
-  outerFirstAngle = srcSquare.getTheta2();
-  innerSecondAngle = destSquare.getTheta1();
-  outerSecondAngle = destSquare.getTheta2();
-
-  if (innerFirstAngle != 0) {
-    pickUpAt(innerFirstAngle,outerFirstAngle, outerFirstAngle);
-  }
-
-  double innerPlaceAngle = innerSecondAngle - innerFirstAngle;
-  double outerPlaceAngle = outerSecondAngle - outerFirstAngle;
-
-  if (innerPlaceAngle != 0) {
-    putDownAt(innerPlaceAngle,outerPlaceAngle,outerSecondAngle);
-  }
-
-  if (outerSecondAngle<0) {
-   Outer.move(5*outerSecondAngle);
-   while(Outer.currentPosition() != Outer.targetPosition()) {
-      Outer.run();
-   }
-  }
-
-  if (outerSecondAngle>299) {
-   Outer.move(50);
-   while(Outer.currentPosition() != Outer.targetPosition()) {
-      Outer.run();
-   }
-  }
-
-  Inner.setMaxSpeed(225);
-  Inner.setSpeed(75);
-  Outer.setMaxSpeed(225);
-  Outer.setSpeed(75);
-
-  if (innerFirstAngle != 0) {  
-    switchValue1 = 0;
-    switchValue2 = 0;
-}
-
-  while (switchValue1 == 0) {
-    Inner.runSpeed();
-    if (digitalRead(switch1) == HIGH) {
-      switchValue1 = 1;
-    } else {
-      switchValue1 = 0;
-    }
-  }
-
-  while (switchValue2 == 0) {
-    Outer.runSpeed();
-    if (digitalRead(switch2) == HIGH) {
-      switchValue2 = 1;
-    } else {
-      switchValue2 = 0;
-    }
-  }
- 
-  innerFirstAngle = 0;
-  outerFirstAngle = 0;
-  innerSecondAngle = 0;
-  outerSecondAngle = 0;
-  
-  moveReady=false;
-}
-
-void captureAt(int innerCapAt, int outerCapAt, int innerCapFrom, int outerCapFrom, int absoluteAngle) {
-
-  pickUpAt(innerCapAt,outerCapAt,absoluteAngle);
+  pickUpAt(destSquare); // Remove piece being captured from square
 
   long innerCapPoint = 137 - innerCapAt;
   long outerCapPoint = 295 - outerCapAt;
 
-  putDownAt(innerCapPoint,outerCapPoint,absoluteAngle);
+  putDownCapture(innerCapPoint,outerCapPoint); // Place piece in capture zone
 
   long innerCapMove = innerCapFrom - 137;
   long outerCapMove = outerCapFrom - 295;
 
-  pickUpAt(innerCapMove,outerCapMove,absoluteAngle);
+  pickUpAt(srcSquare); // Pick piece moving to now empty square
 
   long innerFinalMove = innerCapAt - innerCapFrom;
   long outerFinalMove = outerCapAt - outerCapFrom;
 
-  putDownAt(innerFinalMove, outerFinalMove, absoluteAngle);
+  putDownAt(destSquare); // Place piece in now empty square
 
+}
+
+void castle(ChessboardSquare &srcSquare, ChessboardSquare &destSquare) {
+
+   ChessboardSquare rookSrc;
+   ChessboardSquare rookDest;
+
+   if (destSquare.getName() == "g8") { 
+      rookSrc = board.getSquare('h',8);   // Rook Source Square Info
+      rookDest = board.getSquare('f',8);  // Rook Dest Square Info
+   } else if (destSquare.getName() == "c8") {
+      rookSrc = board.getSquare('a',8);   // Rook Source Square Info
+      rookDest = board.getSquare('d',8);  // Rook Dest Square Info
+   }
+
+   pickUpAt(srcSquare);    // Pick up king
+   putDownAt(destSquare);  // Move king to new square
+   pickUpAt(rookSrc);      // Pick up rook
+   putDownAt(rookDest);    // Move rook to new square
+}
+
+void putDownCapture(int innerAngle, int outerAngle) {
+  
+   int innerSteps = -2.88*innerAngle;
+   if (innerSteps>0) {
+      Inner.move(innerSteps);
+   } else {
+      Inner.move(innerSteps);
+   }
+
+   int outerSteps = -2.88*outerAngle;
+   if (outerSteps>0) {
+      Outer.move(outerSteps);
+   } else {
+      Outer.move(outerSteps);
+   }
+
+   int absoluteAngle = Outer.currentPosition();
+   if (absoluteAngle < 0 | absoluteAngle > 300) {
+      while(Inner.currentPosition() != Inner.targetPosition()) {
+         Inner.run();
+      }
+
+      while(Outer.currentPosition() != Outer.targetPosition()) {
+         Outer.run();
+      }
+   } else {
+      while(Outer.currentPosition() != Outer.targetPosition()) {
+         Outer.run();
+      }
+
+      while(Inner.currentPosition() != Inner.targetPosition()) {
+         Inner.run();
+      }
+   }
+   digitalWrite(actPos, HIGH);
+   digitalWrite(actNeg, LOW); 
+   delay(2500);
+   digitalWrite(mag,LOW);
+   delay(1000);
+   digitalWrite(actPos, LOW);
+   digitalWrite(actNeg, HIGH);
+   delay(2500);
+   holding = 0;
 }

@@ -47,7 +47,7 @@ bool d5dst, d4dst, d3dst, d2dst, d1dst, d0dst;
 
 void setup(){
     Wire.begin(engineSA);
-    Wire.onReceive(receiveEvent);
+    //Wire.onReceive(receiveEvent);
     Serial.begin(115200);
     Serial.println("  *** CHESSuino ***\n");
     
