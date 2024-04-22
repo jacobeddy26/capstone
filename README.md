@@ -21,5 +21,5 @@ system power cycle can fix most issues. Note: there is no game memory, so power 
 
 The main issues plauging the system were the integration of the LCD Touchscreen and the chess engine as when 
 they were running on the same device thechess engine function ('D') would not calculate correctly. 
-The LCD code itself is complete, as well as thecode for all the other systems minus the full promotion handling 
-between the capacitive touch and chess engine.The code structure is there, but has not been fully implemented and tested.
+The LCD code itself is complete, as well as the code for all the other systems minus the full promotion handling 
+between the capacitive touch and chess engine. The code structure is there, but has not been fully implemented and tested.

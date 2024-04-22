@@ -25,7 +25,7 @@ Adafruit_CAP1188 cap8 = Adafruit_CAP1188();
 #define white 1
 #define black 2
 
-// Create a structure variable called myStructure
+// Create a structure variable called capTouchInput
 struct {
   uint8_t touched1;
   uint8_t touched2;
