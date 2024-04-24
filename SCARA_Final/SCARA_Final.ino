@@ -135,14 +135,14 @@ void loop() {
       
       if (receivedMove[0] == 'o') {
          // Castle
-         Serial.println("Castle!");
+         //Serial.println("Castle!");
          castle(srcSquare,destSquare);
       } else if (receivedMove[0] == 'x') {
-         Serial.println("Capture!");
+         //Serial.println("Capture!");
          captureAt(srcSquare,destSquare);
       } else {
          // Normal
-         Serial.println("Normal");
+         //Serial.println("Normal");
          pickUpAt(srcSquare);
          putDownAt(srcSquare,destSquare);
       }
@@ -154,22 +154,22 @@ void pickUpAt(ChessboardSquare &square) {
 
    int innerAngle=square.getInnerAngle();
    int outerAngle=square.getOuterAngle();
-   Serial.print("Picking up at "); Serial.print(square.getName());
-   Serial.print(". innerAngle = "); Serial.print(innerAngle); 
-   Serial.print(", outerAngle = "); Serial.print(outerAngle);
+   //Serial.print("Picking up at "); Serial.print(square.getName());
+   //Serial.print(". innerAngle = "); Serial.print(innerAngle); 
+   //Serial.print(", outerAngle = "); Serial.print(outerAngle);
   
    long innerSteps = -2.88*innerAngle;
-   Serial.print(", innerSteps = "); Serial.print(innerSteps);
+   //Serial.print(", innerSteps = "); Serial.print(innerSteps);
    Inner.move(innerSteps);
    delay(100);
    long outerSteps = -2.88*outerAngle;
-   Serial.print(", outerSteps = "); Serial.print(outerSteps);
+   //Serial.print(", outerSteps = "); Serial.print(outerSteps);
    Outer.move(outerSteps);
    delay(100);
 
    int absoluteAngle = Outer.currentPosition();
 
-   Serial.print(", absoluteAngle = "); Serial.println(absoluteAngle);
+   //Serial.print(", absoluteAngle = "); Serial.println(absoluteAngle);
    if (absoluteAngle < 0 | absoluteAngle > 300) {
       //Inner.runToPosition();
       while(Inner.currentPosition() != Inner.targetPosition()) {
@@ -206,20 +206,20 @@ void putDownAt(ChessboardSquare &srcSquare, ChessboardSquare &destSquare) {
    int destOuterAngle=destSquare.getOuterAngle();
    int innerAngle = destInnerAngle - srcInnerAngle;
    int outerAngle = destOuterAngle - srcOuterAngle;
-   Serial.print("Putting down at "); Serial.print(destSquare.getName());
-   Serial.print(". innerAngle = "); Serial.print(innerAngle); 
-   Serial.print(", outerAngle = "); Serial.print(outerAngle);
+   //Serial.print("Putting down at "); Serial.print(destSquare.getName());
+   //Serial.print(". innerAngle = "); Serial.print(innerAngle); 
+   //Serial.print(", outerAngle = "); Serial.print(outerAngle);
 
    int innerSteps = (int)(-2.88*innerAngle);
-   Serial.print(", innerSteps = "); Serial.print(innerSteps);
+   //Serial.print(", innerSteps = "); Serial.print(innerSteps);
    Inner.move(innerSteps);
 
    int outerSteps = (int)(-2.88*outerAngle);
-   Serial.print(", outerSteps = "); Serial.print(outerSteps);
+   //Serial.print(", outerSteps = "); Serial.print(outerSteps);
    Outer.move(outerSteps);
 
    int absoluteAngle = Outer.currentPosition();
-   Serial.print(", absoluteAngle = "); Serial.println(absoluteAngle);
+   //Serial.print(", absoluteAngle = "); Serial.println(absoluteAngle);
 
    if (absoluteAngle < 0 | absoluteAngle > 300) {
       //Inner.runToPosition();
@@ -270,8 +270,8 @@ void receiveEvent() {
    receivedMove[5] = '\0'; // Null-terminate the received char array
    if ((receivedMove[0] =='?') || (receivedMove[0] == 'x') || receivedMove[0] == 'o')
    {
-      Serial .print("Received move: ");
-      Serial.println(receivedMove); // Print received data to serial monitor
+      //Serial .print("Received move: ");
+      //Serial.println(receivedMove); // Print received data to serial monitor
       parseChessMove(receivedMove);
       moveReady=true;
    }
